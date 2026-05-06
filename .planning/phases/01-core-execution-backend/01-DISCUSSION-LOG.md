@@ -19,7 +19,8 @@ Selected: **[auto] Validate inputs against tool spec immediately at the API boun
 Options:
 - Use `os/exec` calling the podman/docker CLI
 - Use the Go Docker SDK
-Selected: **[manual override] Use `os/exec` calling the rootless podman CLI (no Docker SDK)**
+- Use official Podman Go bindings via rootless socket
+Selected: **[manual override] Use official Podman Go bindings (`go.podman.io/podman/v6/pkg/bindings`) via rootless socket**
 
 ## Q4: Command Construction Mapping
 Options:
