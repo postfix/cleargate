@@ -66,10 +66,53 @@ func (c *Client) Wait(ctx context.Context, id runtime.ContainerID) error {
 }
 
 func (c *Client) Logs(ctx context.Context, id runtime.ContainerID) (<-chan runtime.LogEvent, error) {
-	// Minimal stub for Logs, as full implementation requires wiring stdout/stderr channels.
-	// For MVP we just return an empty channel to satisfy the interface.
 	ch := make(chan runtime.LogEvent)
-	close(ch)
+	
+	// Implementation note for MVP: 
+	// The podman bindings containers.Logs method requires channels for stdout and stderr
+	// and runs asynchronously.
+	stdoutChan := make(chan string)
+	stderrChan := make(chan string)
+
+	go func() {
+		defer close(ch)
+		
+		opts := &containers.LogOptions{
+			Follow:   func() *bool { b := true; return &b }(),
+			Stdout:   func() *bool { b := true; return &b }(),
+			Stderr:   func() *bool { b := true; return &b }(),
+		}
+		
+		// Run containers.Logs in a goroutine because it blocks while following
+		go func() {
+			_ = containers.Logs(c.connCtx, string(id), opts, stdoutChan, stderrChan)
+			close(stdoutChan)
+			close(stderrChan)
+		}()
+
+		// Multiplex the channels
+		for {
+			select {
+			case out, ok := <-stdoutChan:
+				if ok {
+					ch <- runtime.LogEvent{Stream: "stdout", Data: []byte(out)}
+				} else {
+					stdoutChan = nil
+				}
+			case errOut, ok := <-stderrChan:
+				if ok {
+					ch <- runtime.LogEvent{Stream: "stderr", Data: []byte(errOut)}
+				} else {
+					stderrChan = nil
+				}
+			}
+			
+			if stdoutChan == nil && stderrChan == nil {
+				break
+			}
+		}
+	}()
+	
 	return ch, nil
 }
 
