@@ -19,7 +19,7 @@ Establish the foundational backend architecture for launching validated CLI jobs
 - **D-02:** Validate inputs against tool spec immediately at the API boundary, returning 400 Bad Request if invalid.
 
 ### Sandboxing Interface
-- **D-03:** Define an interface and use the Go Docker SDK to ensure programmatic container management for strict execution isolation.
+- **D-03:** Define an interface and use `os/exec` calling the rootless podman CLI (no Docker SDK) to ensure programmatic container management for strict execution isolation.
 
 ### Command Construction Mapping
 - **D-04:** Isolate the `argv[]` builder into a pure, easily testable function that accepts a ToolSpec and Job Values, and returns `[]string`.
@@ -56,7 +56,7 @@ None — execution strategy strictly follows auto-selected defaults.
 <specifics>
 ## Specific Ideas
 
-No specific requirements — open to standard approaches using Go Docker SDK.
+Must use rootless podman CLI via `os/exec` instead of a Docker SDK.
 
 </specifics>
 
