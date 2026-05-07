@@ -1,0 +1,104 @@
+.execution-header {
+  margin-bottom: var(--spacing-xl);
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: var(--spacing-md);
+}
+
+.back-link:hover {
+  color: var(--color-text-primary);
+}
+
+.tool-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.execution-content {
+  background-color: var(--color-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.form-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 200ms ease;
+}
+
+.btn-secondary:hover {
+  border-color: var(--color-text-secondary);
+  background-color: var(--color-surface-elevated);
+}
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--color-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  margin-bottom: var(--spacing-md);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-text-secondary);
+}
+
+.status-dot.running {
+  background-color: var(--color-accent);
+  box-shadow: 0 0 8px var(--color-accent-transparent);
+}
+
+.status-dot.succeeded {
+  background-color: var(--color-success);
+}
+
+.status-dot.failed {
+  background-color: var(--color-destructive);
+}
+
+.status-dot.timeout {
+  background-color: var(--color-warning);
+}
+
+.form-placeholder {
+  padding: var(--spacing-lg);
+  background-color: var(--color-surface-elevated);
+  border-radius: 4px;
+}

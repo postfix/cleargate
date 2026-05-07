@@ -1,0 +1,53 @@
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.tool-card {
+  background-color: var(--color-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  transition: border-color 200ms ease;
+  cursor: pointer;
+}
+
+.tool-card:hover {
+  border-color: rgba(108, 99, 255, 0.4);
+}
+
+.tool-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.tool-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background-color: var(--color-accent-transparent);
+  border-radius: 4px;
+}
+
+.tool-tags {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-top: auto;
+  padding-top: var(--spacing-md);
+}
+
+.tag-pill {
+  padding: 2px var(--spacing-xs);
+  background-color: var(--color-accent-transparent);
+  color: var(--color-accent);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
