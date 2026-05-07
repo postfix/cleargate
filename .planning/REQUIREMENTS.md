@@ -43,4 +43,22 @@
 
 ## Traceability
 
-*(To be updated by roadmap)*
+| ID | Description | Assigned Phase | Status |
+|---|---|---|---|
+| EXEC-01 | Sandboxed execution | Phase 5 | Pending |
+| EXEC-02 | Capture output/metadata | Phase 5 | Pending |
+| EXEC-03 | Stream status/logs | Phase 5 | Pending |
+| EXEC-04 | Compile safe argv | Phase 5 | Pending |
+| EXEC-05 | Prevent arbitrary execution | Phase 5 | Pending |
+| FILE-01 | Upload input files | Phase 5 | Pending |
+| FILE-02 | Download artifacts | Phase 5 | Pending |
+| FILE-03 | Enforce file limits | Phase 5 | Pending |
+| UI-01 | Dynamic forms | Phase 5 | Pending |
+| UI-02 | View catalog | Phase 5 | Pending |
+| UI-03 | Apply presets | Phase 5 | Pending |
+| TOOL-01 | Discover help/docs | Phase 5 | Pending |
+| TOOL-02 | Eino LLM drafting | Phase 5 | Pending |
+| TOOL-03 | Approve/version specs | Phase 5 | Pending |
+| TOOL-04 | Validate schemas | Phase 5 | Pending |
+| AUDIT-01 | Audit logging | Phase 5 | Pending |
+| PRESET-01 | Save presets | Phase 5 | Pending |

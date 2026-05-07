@@ -40,21 +40,26 @@
 3. Users can save successful job parameters as presets and reload them.
 4. An audit log correctly records execution details.
 
+### Phase 5: Backend API Wiring & Global Verification
+**Goal:** Create the `main.go` entrypoint, wire up API routes, and formally verify all orphaned requirements from previous phases.
+**Requirements:** EXEC-01, EXEC-04, EXEC-05, TOOL-04, FILE-01, FILE-02, FILE-03, EXEC-02, TOOL-01, TOOL-02, TOOL-03, UI-01, UI-02, UI-03, EXEC-03, AUDIT-01, PRESET-01
+**Gap Closure:** Closes all orphaned requirements and integration gaps identified in the v1.0 milestone audit.
+
 ## Traceability Map
-- EXEC-01: Phase 1
-- EXEC-02: Phase 2
-- EXEC-03: Phase 4
-- EXEC-04: Phase 1
-- EXEC-05: Phase 1
-- FILE-01: Phase 2
-- FILE-02: Phase 2
-- FILE-03: Phase 2
-- UI-01: Phase 4
-- UI-02: Phase 4
-- UI-03: Phase 4
-- TOOL-01: Phase 3
-- TOOL-02: Phase 3
-- TOOL-03: Phase 3
-- TOOL-04: Phase 1
-- AUDIT-01: Phase 4
-- PRESET-01: Phase 4
+- EXEC-01: Phase 5
+- EXEC-02: Phase 5
+- EXEC-03: Phase 5
+- EXEC-04: Phase 5
+- EXEC-05: Phase 5
+- FILE-01: Phase 5
+- FILE-02: Phase 5
+- FILE-03: Phase 5
+- UI-01: Phase 5
+- UI-02: Phase 5
+- UI-03: Phase 5
+- TOOL-01: Phase 5
+- TOOL-02: Phase 5
+- TOOL-03: Phase 5
+- TOOL-04: Phase 5
+- AUDIT-01: Phase 5
+- PRESET-01: Phase 5
