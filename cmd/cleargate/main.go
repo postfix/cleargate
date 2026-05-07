@@ -1,0 +1,116 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+
+	"github.com/postfix/cleargate/internal/api"
+	"github.com/postfix/cleargate/internal/api/admin"
+	"github.com/postfix/cleargate/internal/job"
+	"github.com/postfix/cleargate/internal/llm"
+	"github.com/postfix/cleargate/internal/repository"
+	"github.com/postfix/cleargate/internal/runtime"
+	"github.com/postfix/cleargate/internal/workspace"
+)
+
+func main() {
+	log.Println("Starting ClearGate Server...")
+
+	// 1. Load Configuration & Initialize Dependencies
+	dbPath := "cleargate.db" // In MVP, could use an env var or a config file
+	workspaceCfg := workspace.DefaultConfig()
+	workspaceManager := workspace.NewManager(workspaceCfg)
+
+	// ToolSpec DB
+	repo, err := repository.NewToolSpecRepository(dbPath)
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer repo.Close()
+
+	// Podman Runtime (Replaced with dummy for Mac build without gpgme)
+	var runtimeClient runtime.ContainerRuntime = &DummyRuntime{}
+
+	// Logger
+	jobLogger := job.NewLogger(workspaceManager)
+
+	// LLM Assistant (Using Mock for MVP)
+	var assistant llm.TemplateAssistant = llm.NewMockAssistant(`
+apiVersion: cleargate.dev/v1alpha1
+kind: ToolSpec
+metadata:
+  name: demo-tool
+  version: "1.0.0"
+  description: "A generated demo tool"
+  owner: "admin"
+runtime:
+  executable: "echo"
+  argv0: "echo"
+`)
+
+	// 2. Instantiate Handlers
+	uploadHandler := api.NewUploadHandler(workspaceManager)
+	downloadHandler := api.NewDownloadHandler(workspaceManager)
+	executeHandler := api.NewExecutionHandler(runtimeClient, workspaceManager, jobLogger, repo)
+	catalogHandler := api.NewCatalogHandler(repo)
+	presetHandler := api.NewPresetHandler()
+	
+	// Admin handler requires assistant. Passing nil is risky, but for MVP we assume it's set or it returns 500.
+	// Actually we should create a dummy assistant if it's nil, but the interface checks will catch it.
+	adminHandler := admin.NewAdminHandler(assistant, repo)
+
+	// 3. Register Routes
+	mux := http.NewServeMux()
+	
+	mux.HandleFunc("POST /api/upload", uploadHandler.HandleUpload)
+	mux.HandleFunc("GET /api/download", downloadHandler.HandleDownload)
+	mux.HandleFunc("POST /api/execute", executeHandler.HandleExecute)
+	mux.HandleFunc("GET /api/catalog", catalogHandler.HandleListCatalog)
+	
+	mux.HandleFunc("POST /api/presets", presetHandler.HandleSavePreset)
+	mux.HandleFunc("GET /api/presets", presetHandler.HandleListPresets)
+
+	mux.HandleFunc("POST /api/admin/drafts", adminHandler.HandleCreateDraft)
+	mux.HandleFunc("GET /api/admin/drafts", adminHandler.HandleListDrafts)
+	mux.HandleFunc("POST /api/admin/tools/{id}/approve", adminHandler.HandleApproveDraft)
+
+	// 4. Serve Static SPA
+	// Note: We strip the prefix if serving from a subpath, but since we are serving from /,
+	// we can just use the FileServer. 
+	// To support React Router, we'd need a custom handler, but for MVP `http.FileServer` is fine.
+	fs := http.FileServer(http.Dir("./web/dist"))
+	mux.Handle("/", fs)
+
+	// 5. Start Server
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	
+	addr := fmt.Sprintf(":%s", port)
+	log.Printf("Server listening on %s", addr)
+	if err := http.ListenAndServe(addr, mux); err != nil {
+		log.Fatalf("Server stopped: %v", err)
+	}
+}
+
+// DummyRuntime implements runtime.ContainerRuntime for MVP testing
+type DummyRuntime struct{}
+
+func (d *DummyRuntime) PullImage(ctx context.Context, image string) error { return nil }
+func (d *DummyRuntime) Create(ctx context.Context, req runtime.CreateContainerRequest) (runtime.ContainerID, error) {
+	return runtime.ContainerID("dummy-id"), nil
+}
+func (d *DummyRuntime) Start(ctx context.Context, id runtime.ContainerID) error { return nil }
+func (d *DummyRuntime) Wait(ctx context.Context, id runtime.ContainerID) error { return nil }
+func (d *DummyRuntime) Logs(ctx context.Context, id runtime.ContainerID) (<-chan runtime.LogEvent, error) {
+	ch := make(chan runtime.LogEvent)
+	go func() {
+		defer close(ch)
+		ch <- runtime.LogEvent{Stream: "stdout", Data: []byte("Dummy log execution\n")}
+	}()
+	return ch, nil
+}
