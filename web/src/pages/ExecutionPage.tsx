@@ -5,6 +5,7 @@ import { DynamicForm } from '../components/DynamicForm';
 import { PresetBar } from '../components/PresetBar';
 import { LogStream } from '../components/LogStream';
 import type { ToolSpec, ToolSpecRecord } from '../types/models';
+import yaml from 'js-yaml';
 import './ExecutionPage.css';
 
 export default function ExecutionPage() {
@@ -30,9 +31,12 @@ export default function ExecutionPage() {
         const found = (data || []).find((t: any) => t.ID === id);
         if (found) {
           setRecord(found);
-          // In a real implementation we would parse found.Content
-          // For now, if we don't have a parser, we leave toolSpec null 
-          // but we still have the record.
+          try {
+            const parsed = yaml.load(found.Content) as ToolSpec;
+            setToolSpec(parsed);
+          } catch (e) {
+            console.error('Failed to parse ToolSpec YAML', e);
+          }
         } else {
           setError('Tool not found');
         }
