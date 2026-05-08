@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 
@@ -20,14 +21,16 @@ type ExecutionHandler struct {
 	workspaceManager *workspace.Manager
 	logger           *job.Logger
 	repo             *repository.ToolSpecRepository
+	registry         *job.Registry
 }
 
-func NewExecutionHandler(r runtime.ContainerRuntime, wm *workspace.Manager, l *job.Logger, repo *repository.ToolSpecRepository) *ExecutionHandler {
+func NewExecutionHandler(r runtime.ContainerRuntime, wm *workspace.Manager, l *job.Logger, repo *repository.ToolSpecRepository, reg *job.Registry) *ExecutionHandler {
 	return &ExecutionHandler{
 		runtime:          r,
 		workspaceManager: wm,
 		logger:           l,
 		repo:             repo,
+		registry:         reg,
 	}
 }
 
@@ -123,6 +126,10 @@ func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request)
 		WorkspaceDir: workspacePath,
 	}
 
+	if spec.Runtime.Executable == "nmap" {
+		containerReq.CapAdd = []string{"CAP_NET_RAW"}
+	}
+
 	if err := h.runtime.PullImage(ctx, containerReq.Image); err != nil {
 		http.Error(w, fmt.Sprintf("failed to pull image: %v", err), http.StatusInternalServerError)
 		return
@@ -139,6 +146,9 @@ func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Register job in the registry
+	h.registry.Register(req.JobID, req.ToolID)
+
 	// Attach logs in background
 	logChan, err := h.runtime.Logs(ctx, containerID)
 	if err == nil {
@@ -151,11 +161,12 @@ func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request)
 				}
 			}
 			// Wait for completion to get exit code
-			err := h.runtime.Wait(ctx, containerID)
-			exitCode := 0
+			exitCode, err := h.runtime.Wait(ctx, containerID)
 			if err != nil {
-				exitCode = 1
+				exitCode = -1
+				h.logger.LogStderr(req.JobID, []byte(fmt.Sprintf("wait error: %v", err)))
 			}
+			h.registry.Complete(req.JobID, exitCode)
 			h.logger.LogStatus(req.JobID, "complete", exitCode)
 		}()
 	} else {
@@ -203,13 +214,22 @@ func (h *ExecutionHandler) HandleEvents(w http.ResponseWriter, r *http.Request) 
 			
 			var payload map[string]interface{}
 			if ev.Type == "status" {
+				parts := strings.SplitN(string(ev.Data), ":", 2)
+				status := "failed"
+				var exitCode int = -1
+				if len(parts) == 2 {
+					if parts[0] == "complete" {
+						fmt.Sscanf(parts[1], "%d", &exitCode)
+						if exitCode == 0 {
+							status = "succeeded"
+						}
+					}
+				}
+				
 				payload = map[string]interface{}{
 					"type": "complete",
-					"status": ev.Data,
-					"exitCode": 0, // Simplified for MVP
-				}
-				if string(ev.Data) == "complete" {
-					payload["status"] = "succeeded"
+					"status": status,
+					"exitCode": exitCode,
 				}
 			} else {
 				payload = map[string]interface{}{
@@ -230,4 +250,18 @@ func (h *ExecutionHandler) HandleEvents(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 	}
+}
+
+// HandleListJobs returns active/recent jobs, optionally filtered by tool_id.
+func (h *ExecutionHandler) HandleListJobs(w http.ResponseWriter, r *http.Request) {
+	toolID := r.URL.Query().Get("tool_id")
+	var jobs []job.JobRecord
+	if toolID != "" {
+		jobs = h.registry.GetByTool(toolID)
+	}
+	if jobs == nil {
+		jobs = []job.JobRecord{}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(jobs)
 }

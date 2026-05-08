@@ -51,8 +51,9 @@ func main() {
 		runtimeClient = podmanClient
 	}
 
-	// Logger
+	// Logger & Registry
 	jobLogger := job.NewLogger(workspaceManager)
+	jobRegistry := job.NewRegistry()
 
 	// LLM Assistant (Using Mock for MVP)
 	var assistant llm.TemplateAssistant = llm.NewMockAssistant(`
@@ -71,7 +72,7 @@ runtime:
 	// 2. Instantiate Handlers
 	uploadHandler := api.NewUploadHandler(workspaceManager)
 	downloadHandler := api.NewDownloadHandler(workspaceManager)
-	executeHandler := api.NewExecutionHandler(runtimeClient, workspaceManager, jobLogger, repo)
+	executeHandler := api.NewExecutionHandler(runtimeClient, workspaceManager, jobLogger, repo, jobRegistry)
 	catalogHandler := api.NewCatalogHandler(repo)
 	presetHandler := api.NewPresetHandler()
 	
@@ -86,6 +87,7 @@ runtime:
 	mux.HandleFunc("GET /api/download", downloadHandler.HandleDownload)
 	mux.HandleFunc("POST /api/execute", executeHandler.HandleExecute)
 	mux.HandleFunc("GET /api/jobs/{id}/events", executeHandler.HandleEvents)
+	mux.HandleFunc("GET /api/jobs", executeHandler.HandleListJobs)
 	mux.HandleFunc("GET /api/catalog", catalogHandler.HandleListCatalog)
 	
 	mux.HandleFunc("POST /api/presets", presetHandler.HandleSavePreset)

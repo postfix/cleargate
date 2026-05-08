@@ -47,6 +47,18 @@ export default function ExecutionPage() {
         setError('Could not load tool details.');
         setLoading(false);
       });
+
+    // Check for active jobs to reconnect after page refresh
+    fetch(`/api/jobs?tool_id=${id}`)
+      .then(res => res.json())
+      .then((jobs: any[]) => {
+        const running = jobs.find((j: any) => j.status === 'running');
+        if (running) {
+          setActiveJobId(running.job_id);
+          setJobStatus('running');
+        }
+      })
+      .catch(() => { /* ignore */ });
   }, [id]);
 
   const handleRun = async () => {
