@@ -34,7 +34,14 @@ func NewPodmanRuntime() (*PodmanRuntime, error) {
 }
 
 func (p *PodmanRuntime) PullImage(ctx context.Context, image string) error {
-	_, err := images.Pull(p.connCtx, image, nil)
+	exists, err := images.Exists(p.connCtx, image, nil)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	_, err = images.Pull(p.connCtx, image, nil)
 	return err
 }
 
