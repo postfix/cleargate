@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/postfix/cleargate/internal/api"
 	"github.com/postfix/cleargate/internal/api/admin"
@@ -94,12 +95,19 @@ runtime:
 	mux.HandleFunc("GET /api/admin/drafts", adminHandler.HandleListDrafts)
 	mux.HandleFunc("POST /api/admin/tools/{id}/approve", adminHandler.HandleApproveDraft)
 
-	// 4. Serve Static SPA
-	// Note: We strip the prefix if serving from a subpath, but since we are serving from /,
-	// we can just use the FileServer. 
-	// To support React Router, we'd need a custom handler, but for MVP `http.FileServer` is fine.
-	fs := http.FileServer(http.Dir("./web/dist"))
-	mux.Handle("/", fs)
+	// 4. Serve Static SPA with React Router fallback
+	spaDir := "./web/dist"
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// Try to serve the exact file first
+		path := filepath.Join(spaDir, r.URL.Path)
+		info, err := os.Stat(path)
+		if err == nil && !info.IsDir() {
+			http.ServeFile(w, r, path)
+			return
+		}
+		// Fallback: serve index.html so React Router handles the route
+		http.ServeFile(w, r, filepath.Join(spaDir, "index.html"))
+	})
 
 	// 5. Start Server
 	port := os.Getenv("PORT")
@@ -122,7 +130,7 @@ func (d *DummyRuntime) Create(ctx context.Context, req runtime.CreateContainerRe
 	return runtime.ContainerID("dummy-id"), nil
 }
 func (d *DummyRuntime) Start(ctx context.Context, id runtime.ContainerID) error { return nil }
-func (d *DummyRuntime) Wait(ctx context.Context, id runtime.ContainerID) error { return nil }
+func (d *DummyRuntime) Wait(ctx context.Context, id runtime.ContainerID) (int, error) { return 0, nil }
 func (d *DummyRuntime) Logs(ctx context.Context, id runtime.ContainerID) (<-chan runtime.LogEvent, error) {
 	ch := make(chan runtime.LogEvent)
 	go func() {
