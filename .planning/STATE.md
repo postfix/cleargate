@@ -1,25 +1,12 @@
----
-gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: v1.0 milestone complete
-last_updated: "2026-05-08T10:34:30.681Z"
-progress:
-  total_phases: 5
-  completed_phases: 1
-  total_plans: 6
-  completed_plans: 2
----
+## Current Position
 
-# Project State
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-08 — Milestone v1.1 started
 
-## Project Reference
+## Accumulated Context
 
-See: .planning/PROJECT.md (updated 2026-05-06)
-
-**Core value:** Expose CLI tools safely through generated web interfaces using strict, deterministic ToolSpec validation to prevent arbitrary command execution.
-**Current focus:** Phase 05 — backend-api-wiring-and-global-verification
-
-## Active Work
-
-Initialized project.
+- V1.0 completed the MVP, establishing the baseline SPA and DuckDB metadata store.
+- ToolSpec generation and basic execution via dummy backend are implemented.
+- We bypassed CGO/gpgme compilation issues for Podman on Mac by using a dummy runtime. Moving to v1.1 we will need to either test on Linux, or use a remote Podman connection for Mac.

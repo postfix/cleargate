@@ -8,6 +8,16 @@ ClearGate is a secure CLI application gateway that converts approved command-lin
 
 Expose CLI tools safely through generated web interfaces using strict, deterministic ToolSpec validation to prevent arbitrary command execution.
 
+## Current Milestone: v1.1 Rootless Podman Hardening & First Application
+
+**Goal:** Implement a fully rootless, hardened Podman sandbox profile and deploy the first fully working CLI application through ClearGate.
+
+**Target features:**
+- Implement rootless Podman execution for job isolation
+- Create hardened sandbox security profiles (seccomp, network isolation)
+- Define and approve a real, fully working ToolSpec application
+- Verify end-to-end execution of this first real application
+
 ## Requirements
 
 ### Validated
@@ -30,6 +40,8 @@ Expose CLI tools safely through generated web interfaces using strict, determini
 - [ ] Provide strong auditability (who, what, when, inputs, versions, sandbox policy).
 - [ ] Generate UI automatically from the ToolSpec.
 - [ ] Implement secure execution backend with sandbox policies (Docker/Podman).
+- [ ] Rootless Podman hardened sandbox profile.
+- [ ] Provide a fully working first application (ToolSpec).
 
 ### Out of Scope
 
