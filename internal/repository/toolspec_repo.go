@@ -102,6 +102,26 @@ func (r *ToolSpecRepository) ListDrafts() ([]ToolSpecRecord, error) {
 	return drafts, nil
 }
 
+// ListApproved returns all ToolSpecs with 'approved' status.
+func (r *ToolSpecRepository) ListApproved() ([]ToolSpecRecord, error) {
+	rows, err := r.db.Query("SELECT id, name, version, status, content, created_at FROM toolspecs WHERE status = 'approved'")
+	if err != nil {
+		return nil, fmt.Errorf("failed to query approved toolspecs: %w", err)
+	}
+	defer rows.Close()
+
+	var approved []ToolSpecRecord
+	for rows.Next() {
+		var record ToolSpecRecord
+		if err := rows.Scan(&record.ID, &record.Name, &record.Version, &record.Status, &record.Content, &record.CreatedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		approved = append(approved, record)
+	}
+
+	return approved, nil
+}
+
 // Approve updates the status of a ToolSpec to 'approved'.
 func (r *ToolSpecRepository) Approve(id string) error {
 	res, err := r.db.Exec("UPDATE toolspecs SET status = 'approved' WHERE id = ?", id)
