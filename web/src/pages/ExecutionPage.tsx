@@ -4,7 +4,7 @@ import { ChevronLeft, Play, Save } from 'lucide-react';
 import { DynamicForm } from '../components/DynamicForm';
 import { PresetBar } from '../components/PresetBar';
 import { LogStream } from '../components/LogStream';
-import type { ToolSpec, ToolSpecRecord } from '../types/models';
+import type { ToolSpec, ToolSpecRecord, Preset } from '../types/models';
 import yaml from 'js-yaml';
 import './ExecutionPage.css';
 
@@ -18,7 +18,8 @@ export default function ExecutionPage() {
   
   // Job execution state
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
-  const [jobStatus, setJobStatus] = useState<string>('idle'); // idle, running, succeeded, failed, timeout
+  const [jobStatus, setJobStatus] = useState<string>('idle');
+  const [savedPresets, setSavedPresets] = useState<Preset[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -129,17 +130,20 @@ export default function ExecutionPage() {
     const presetName = prompt("Enter a name for this preset:");
     if (!presetName) return;
     
+    const newPreset: Preset = {
+      id: presetName.toLowerCase().replace(/\s+/g, '-'),
+      name: presetName,
+      values: { ...formState },
+    };
+
     try {
       const res = await fetch('/api/presets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: presetName.toLowerCase().replace(/\s+/g, '-'),
-          name: presetName,
-          values: formState,
-        }),
+        body: JSON.stringify(newPreset),
       });
       if (!res.ok) throw new Error('Failed to save preset');
+      setSavedPresets(prev => [...prev, newPreset]);
     } catch (err: any) {
       console.error('Failed to save preset:', err);
     }
@@ -160,9 +164,12 @@ export default function ExecutionPage() {
         </div>
       </div>
 
-      {toolSpec && toolSpec.presets && toolSpec.presets.length > 0 && (
-        <PresetBar presets={toolSpec.presets} onSelect={handleApplyPreset} />
-      )}
+      {(() => {
+        const allPresets = [...(toolSpec?.presets || []), ...savedPresets];
+        return allPresets.length > 0 ? (
+          <PresetBar presets={allPresets} onSelect={handleApplyPreset} />
+        ) : null;
+      })()}
 
       <div className="execution-content">
         <div className="form-section">
