@@ -125,12 +125,24 @@ export default function ExecutionPage() {
     setFormState(values);
   };
 
-  const handleSavePreset = () => {
+  const handleSavePreset = async () => {
     const presetName = prompt("Enter a name for this preset:");
     if (!presetName) return;
     
-    // For MVP, we just alert since backend preset API isn't wired
-    alert(`[MVP Mode] Saving preset '${presetName}' with values:\n\n${JSON.stringify(formState, null, 2)}\n\nIn production, this would call POST /api/tools/${id}/presets`);
+    try {
+      const res = await fetch('/api/presets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: presetName.toLowerCase().replace(/\s+/g, '-'),
+          name: presetName,
+          values: formState,
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to save preset');
+    } catch (err: any) {
+      console.error('Failed to save preset:', err);
+    }
   };
 
   if (loading) return <div className="page-container">Loading...</div>;
