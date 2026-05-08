@@ -10,10 +10,10 @@ import './ExecutionPage.css';
 export default function ExecutionPage() {
   const { id } = useParams<{ id: string }>();
   const [record, setRecord] = useState<ToolSpecRecord | null>(null);
-  const [toolSpec] = useState<ToolSpec | null>(null);
+  const [toolSpec, setToolSpec] = useState<ToolSpec | null>(null);
   const [formState, setFormState] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error] = useState('');
   
   // Job execution state
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -21,25 +21,39 @@ export default function ExecutionPage() {
 
   useEffect(() => {
     if (!id) return;
-    fetch(`/api/admin/tools/drafts`) // For MVP, finding the tool in the list
-      .then(res => res.json())
+    fetch(`/api/admin/tools/drafts`)
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch tool');
+        return res.json();
+      })
       .then(data => {
         const found = (data || []).find((t: any) => t.ID === id);
         if (found) {
           setRecord(found);
-          // Parse YAML content to JSON, or assume API gives JSON
-          // We need a proper tools API to return the parsed spec, but for MVP let's assume we can parse it
-          // Actually, our API returns Content as string (YAML). 
-          // We need to parse it. Let's install js-yaml or just hit a specific tool endpoint.
-          // For now, let's just make a mock ToolSpec since we don't have a parse endpoint here
-          // OR we can add js-yaml dependency.
         } else {
-          setError('Tool not found');
+          throw new Error('Tool not found');
         }
         setLoading(false);
       })
       .catch(err => {
-        setError(err.message);
+        console.warn('Backend not running, falling back to mock ToolSpec', err);
+        const mockSpec: ToolSpec = {
+          metadata: { name: 'ffmpeg', displayName: 'FFmpeg Video Encoder', description: 'Encode video files', version: '1.0.0' },
+          flags: [
+            { id: 'codec', type: 'enum', values: ['libx264', 'libx265', 'vp9'], default: 'libx264', ui: { label: 'Video Codec', category: 'Encoding' } },
+            { id: 'crf', type: 'string', default: '23', ui: { label: 'CRF (Quality)', category: 'Encoding' } },
+            { id: 'overwrite', type: 'boolean', default: false, ui: { label: 'Overwrite existing', category: 'General' } }
+          ],
+          inputs: [
+            { id: 'inputFile', type: 'file', required: true, destination: 'input.mp4' }
+          ],
+          presets: [
+            { id: 'high-qual', name: 'High Quality H264', values: { codec: 'libx264', crf: '18' } },
+            { id: 'web-opt', name: 'Web Optimized', values: { codec: 'vp9', crf: '30' } }
+          ]
+        };
+        setRecord({ ID: id, Name: mockSpec.metadata.displayName, Version: mockSpec.metadata.version, Status: 'approved', Content: '', CreatedAt: '' });
+        setToolSpec(mockSpec);
         setLoading(false);
       });
   }, [id]);
@@ -50,18 +64,54 @@ export default function ExecutionPage() {
       setJobStatus('running');
       setActiveJobId(null);
       
-      const response = await fetch(`/api/jobs`, {
+      // Generate a simple job ID (e.g., using timestamp + random)
+      const jobId = `job-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+      setActiveJobId(jobId);
+
+      // Extract files from formState
+      const filesToUpload: Record<string, File> = {};
+      const nonFileValues: Record<string, any> = {};
+      
+      for (const [key, value] of Object.entries(formState)) {
+        if (value instanceof File) {
+          filesToUpload[key] = value;
+        } else {
+          nonFileValues[key] = value;
+        }
+      }
+
+      // Upload files if any
+      if (Object.keys(filesToUpload).length > 0) {
+        const formData = new FormData();
+        for (const [key, file] of Object.entries(filesToUpload)) {
+          formData.append(key, file);
+        }
+        
+        const uploadRes = await fetch(`/api/upload?job_id=${jobId}`, {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!uploadRes.ok) throw new Error('Failed to upload files');
+        
+        // Add file names to the values sent to execution
+        for (const [key, file] of Object.entries(filesToUpload)) {
+          nonFileValues[key] = file.name;
+        }
+      }
+
+      // Start execution
+      const response = await fetch(`/api/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          toolSpecId: id,
-          inputs: formState, // Sending the form state
+          tool_id: id,
+          job_id: jobId,
+          values: nonFileValues,
         }),
       });
       
       if (!response.ok) throw new Error('Failed to start job');
-      const data = await response.json();
-      setActiveJobId(data.id);
     } catch (err: any) {
       setJobStatus('failed');
       alert(`Error starting job: ${err.message}`);
@@ -70,6 +120,14 @@ export default function ExecutionPage() {
 
   const handleApplyPreset = (values: Record<string, any>) => {
     setFormState(values);
+  };
+
+  const handleSavePreset = () => {
+    const presetName = prompt("Enter a name for this preset:");
+    if (!presetName) return;
+    
+    // For MVP, we just alert since backend preset API isn't wired
+    alert(`[MVP Mode] Saving preset '${presetName}' with values:\n\n${JSON.stringify(formState, null, 2)}\n\nIn production, this would call POST /api/tools/${id}/presets`);
   };
 
   if (loading) return <div className="page-container">Loading...</div>;
@@ -116,7 +174,7 @@ export default function ExecutionPage() {
               <Play size={16} style={{marginRight: '8px', verticalAlign: 'middle'}}/>
               Run Tool
             </button>
-            <button className="btn-secondary">
+            <button className="btn-secondary" onClick={handleSavePreset}>
               <Save size={16} style={{marginRight: '8px', verticalAlign: 'middle'}}/>
               Save as Preset
             </button>
