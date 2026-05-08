@@ -122,12 +122,12 @@ type Output struct {
 }
 
 type Preset struct {
-	ID          string                 `yaml:"id"`
-	Name        string                 `yaml:"name"`
-	Description string                 `yaml:"description,omitempty"`
-	Visibility  string                 `yaml:"visibility,omitempty"`
-	Locked      bool                   `yaml:"locked,omitempty"`
-	Values      map[string]interface{} `yaml:"values"`
+	ID          string                 `yaml:"id" json:"id"`
+	Name        string                 `yaml:"name" json:"name"`
+	Description string                 `yaml:"description,omitempty" json:"description,omitempty"`
+	Visibility  string                 `yaml:"visibility,omitempty" json:"visibility,omitempty"`
+	Locked      bool                   `yaml:"locked,omitempty" json:"locked,omitempty"`
+	Values      map[string]interface{} `yaml:"values" json:"values"`
 }
 
 type SecurityPolicy struct {

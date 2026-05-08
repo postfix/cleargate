@@ -60,6 +60,12 @@ export default function ExecutionPage() {
         }
       })
       .catch(() => { /* ignore */ });
+
+    // Load user-saved presets
+    fetch('/api/presets')
+      .then(res => res.json())
+      .then((presets: Preset[]) => setSavedPresets(presets || []))
+      .catch(() => { /* ignore */ });
   }, [id]);
 
   const handleRun = async () => {
