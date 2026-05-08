@@ -3,10 +3,12 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
-	"github.com/postfix/cleargate/internal/models"
 	_ "github.com/marcboeker/go-duckdb"
+	"github.com/postfix/cleargate/internal/models"
 	"gopkg.in/yaml.v3"
 )
 
@@ -113,6 +115,52 @@ func (r *ToolSpecRepository) Approve(id string) error {
 	}
 	if rowsAffected == 0 {
 		return fmt.Errorf("toolspec not found: %s", id)
+	}
+
+	return nil
+}
+
+// SyncFromDirectory reads all .yaml and .yml files from dirPath and seeds them into the database.
+func (r *ToolSpecRepository) SyncFromDirectory(dirPath string) error {
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil // directory doesn't exist, nothing to sync
+		}
+		return fmt.Errorf("failed to read tools directory %s: %w", dirPath, err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		ext := filepath.Ext(entry.Name())
+		if ext != ".yaml" && ext != ".yml" {
+			continue
+		}
+
+		path := filepath.Join(dirPath, entry.Name())
+		b, err := os.ReadFile(path)
+		if err != nil {
+			fmt.Printf("warning: failed to read %s: %v\n", path, err)
+			continue
+		}
+
+		var spec models.ToolSpec
+		if err := yaml.Unmarshal(b, &spec); err != nil {
+			fmt.Printf("warning: failed to unmarshal %s: %v\n", path, err)
+			continue
+		}
+
+		if err := r.SaveDraft(&spec); err != nil {
+			fmt.Printf("warning: failed to save toolspec from %s: %v\n", path, err)
+			continue
+		}
+
+		id := fmt.Sprintf("%s-%s", spec.Metadata.Name, spec.Metadata.Version)
+		if err := r.Approve(id); err != nil {
+			fmt.Printf("warning: failed to approve toolspec from %s: %v\n", path, err)
+		}
 	}
 
 	return nil

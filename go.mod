@@ -3,7 +3,9 @@ module github.com/postfix/cleargate
 go 1.25.6
 
 require (
-	go.podman.io/podman/v6 v6.0.0-20260505222809-18f792581034
+	github.com/marcboeker/go-duckdb v1.8.5
+	github.com/opencontainers/runtime-spec v1.3.0
+	go.podman.io/podman/v6 v6.0.0-20260507185217-ef2117a15852
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -66,7 +68,6 @@ require (
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/manifoldco/promptui v0.9.0 // indirect
-	github.com/marcboeker/go-duckdb v1.8.5 // indirect
 	github.com/mattn/go-runewidth v0.0.23 // indirect
 	github.com/mattn/go-sqlite3 v1.14.44 // indirect
 	github.com/miekg/pkcs11 v1.1.1 // indirect
@@ -90,7 +91,6 @@ require (
 	github.com/opencontainers/cgroups v0.0.6 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
-	github.com/opencontainers/runtime-spec v1.3.0 // indirect
 	github.com/opencontainers/runtime-tools v0.9.1-0.20260316125833-8a4db579f5c8 // indirect
 	github.com/opencontainers/selinux v1.13.1 // indirect
 	github.com/openshift/imagebuilder v1.2.20 // indirect
@@ -121,9 +121,9 @@ require (
 	go.opentelemetry.io/otel/metric v1.43.0 // indirect
 	go.opentelemetry.io/otel/trace v1.43.0 // indirect
 	go.podman.io/buildah v1.42.1-0.20260501153811-377cf64e213b // indirect
-	go.podman.io/common v0.67.2-0.20260504145149-b5d50461d3b9 // indirect
-	go.podman.io/image/v5 v5.39.3-0.20260504145149-b5d50461d3b9 // indirect
-	go.podman.io/storage v1.62.1-0.20260504145149-b5d50461d3b9 // indirect
+	go.podman.io/common v0.67.2-0.20260506114327-35c76125c5b5 // indirect
+	go.podman.io/image/v5 v5.39.3-0.20260506114327-35c76125c5b5 // indirect
+	go.podman.io/storage v1.62.1-0.20260506114327-35c76125c5b5 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	golang.org/x/crypto v0.50.0 // indirect
 	golang.org/x/exp v0.0.0-20250911091902-df9299821621 // indirect

@@ -8,7 +8,7 @@ export default function CatalogPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch('/api/admin/tools/drafts') // For MVP using drafts endpoint
+    fetch('/api/catalog')
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch tools');
         return res.json();
@@ -18,7 +18,8 @@ export default function CatalogPage() {
         setLoading(false);
       })
       .catch(err => {
-        setError(err.message);
+        console.error('Failed to load catalog:', err);
+        setError('Could not connect to backend to load tools.');
         setLoading(false);
       });
   }, []);

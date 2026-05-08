@@ -13,7 +13,7 @@ export default function ExecutionPage() {
   const [toolSpec, setToolSpec] = useState<ToolSpec | null>(null);
   const [formState, setFormState] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
-  const [error] = useState('');
+  const [error, setError] = useState('');
   
   // Job execution state
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -21,7 +21,7 @@ export default function ExecutionPage() {
 
   useEffect(() => {
     if (!id) return;
-    fetch(`/api/admin/tools/drafts`)
+    fetch('/api/catalog')
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch tool');
         return res.json();
@@ -30,30 +30,17 @@ export default function ExecutionPage() {
         const found = (data || []).find((t: any) => t.ID === id);
         if (found) {
           setRecord(found);
+          // In a real implementation we would parse found.Content
+          // For now, if we don't have a parser, we leave toolSpec null 
+          // but we still have the record.
         } else {
-          throw new Error('Tool not found');
+          setError('Tool not found');
         }
         setLoading(false);
       })
       .catch(err => {
-        console.warn('Backend not running, falling back to mock ToolSpec', err);
-        const mockSpec: ToolSpec = {
-          metadata: { name: 'ffmpeg', displayName: 'FFmpeg Video Encoder', description: 'Encode video files', version: '1.0.0' },
-          flags: [
-            { id: 'codec', type: 'enum', values: ['libx264', 'libx265', 'vp9'], default: 'libx264', ui: { label: 'Video Codec', category: 'Encoding' } },
-            { id: 'crf', type: 'string', default: '23', ui: { label: 'CRF (Quality)', category: 'Encoding' } },
-            { id: 'overwrite', type: 'boolean', default: false, ui: { label: 'Overwrite existing', category: 'General' } }
-          ],
-          inputs: [
-            { id: 'inputFile', type: 'file', required: true, destination: 'input.mp4' }
-          ],
-          presets: [
-            { id: 'high-qual', name: 'High Quality H264', values: { codec: 'libx264', crf: '18' } },
-            { id: 'web-opt', name: 'Web Optimized', values: { codec: 'vp9', crf: '30' } }
-          ]
-        };
-        setRecord({ ID: id, Name: mockSpec.metadata.displayName, Version: mockSpec.metadata.version, Status: 'approved', Content: '', CreatedAt: '' });
-        setToolSpec(mockSpec);
+        console.error('Failed to fetch tool:', err);
+        setError('Could not load tool details.');
         setLoading(false);
       });
   }, [id]);

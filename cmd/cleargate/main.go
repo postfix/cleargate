@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -17,6 +18,9 @@ import (
 )
 
 func main() {
+	toolsDir := flag.String("tools-dir", "./tools", "Directory containing ToolSpec YAMLs")
+	flag.Parse()
+
 	log.Println("Starting ClearGate Server...")
 
 	// 1. Load Configuration & Initialize Dependencies
@@ -31,8 +35,20 @@ func main() {
 	}
 	defer repo.Close()
 
-	// Podman Runtime (Replaced with dummy for Mac build without gpgme)
-	var runtimeClient runtime.ContainerRuntime = &DummyRuntime{}
+	if err := repo.SyncFromDirectory(*toolsDir); err != nil {
+		log.Printf("Warning: failed to sync tools directory: %v", err)
+	}
+
+	// Podman Runtime
+	var runtimeClient runtime.ContainerRuntime
+	podmanClient, err := runtime.NewPodmanRuntime()
+	if err != nil {
+		log.Printf("Warning: failed to connect to Podman (%v). Falling back to DummyRuntime.", err)
+		runtimeClient = &DummyRuntime{}
+	} else {
+		log.Println("Successfully connected to Podman socket.")
+		runtimeClient = podmanClient
+	}
 
 	// Logger
 	jobLogger := job.NewLogger(workspaceManager)

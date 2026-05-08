@@ -1,0 +1,43 @@
+apiVersion: cleargate.dev/v1alpha1
+kind: ToolSpec
+metadata:
+  name: nmap
+  displayName: Nmap Port Scanner
+  version: "7.94"
+  description: "Network exploration tool and security / port scanner"
+  owner: admin
+runtime:
+  executable: nmap
+  argv0: nmap
+flags:
+  - id: target
+    type: string
+    required: true
+    ui:
+      label: "Target Host(s)"
+      category: "Target Specification"
+  - id: synScan
+    type: boolean
+    flag: "-sS"
+    default: true
+    ui:
+      label: "TCP SYN Scan"
+      category: "Scan Techniques"
+  - id: serviceVersion
+    type: boolean
+    flag: "-sV"
+    default: false
+    ui:
+      label: "Probe open ports to determine service/version info"
+      category: "Service/Version Detection"
+presets:
+  - id: quick
+    name: Quick Scan
+    values:
+      synScan: true
+      serviceVersion: false
+  - id: full
+    name: Full Version Scan
+    values:
+      synScan: true
+      serviceVersion: true

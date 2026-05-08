@@ -13,7 +13,9 @@ type CreateContainerRequest struct {
 	Name    string
 	Command []string
 	Remove  bool
-	// Add other fields like mounts, limits, etc. as needed
+	
+	WorkspaceDir string
+	CapAdd       []string
 }
 
 // LogEvent represents a single line or chunk of log output.
