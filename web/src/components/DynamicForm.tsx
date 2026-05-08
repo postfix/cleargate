@@ -53,15 +53,40 @@ export function DynamicForm({ spec, value, onChange }: DynamicFormProps) {
   };
 
   const renderInput = (input: Input) => {
+    const selectedFile = value[input.id] as File | undefined;
+    
     return (
       <div key={input.id} className="form-group">
         <label className="form-label label">
           File Input: {input.id}
           {input.required && <span className="required-star">*</span>}
         </label>
-        <div className="file-drop-zone">
-          <p className="label">Drag and drop files here, or click to select</p>
-          <input type="file" onChange={(e) => updateField(input.id, e.target.files?.[0])} />
+        <div className={`file-drop-zone ${selectedFile ? 'has-file' : ''}`}>
+          {selectedFile ? (
+            <div className="selected-file-info">
+              <span className="file-name">{selectedFile.name}</span>
+              <button 
+                className="clear-file-btn" 
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  updateField(input.id, undefined); 
+                }}
+              >
+                ×
+              </button>
+            </div>
+          ) : (
+            <p className="label">Drag and drop files here, or click to select</p>
+          )}
+          <input 
+            type="file" 
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                updateField(input.id, e.target.files[0]);
+              }
+            }} 
+            title={selectedFile ? "Click to change file" : ""}
+          />
         </div>
       </div>
     );
