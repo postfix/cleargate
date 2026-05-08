@@ -1,65 +1,21 @@
-# ClearGate Roadmap
+# ClearGate v1.1 Roadmap
 
-**4 phases** | **15 requirements mapped** | All v1 requirements covered ✓
+**1 phase** | **4 requirements mapped** | All v1.1 requirements covered ✓
 
 ## Phases
 
-### Phase 1: Core Execution Backend
-**Goal:** Establish the foundational backend architecture for launching validated CLI jobs without shell execution.
-**Requirements:** EXEC-01, EXEC-04, EXEC-05, TOOL-04
-**Success Criteria:**
-1. A hardcoded, simple ToolSpec can be loaded and validated.
-2. An incoming execution request is validated against the ToolSpec.
-3. The system constructs a safe `argv[]` array.
-4. The system launches a sandboxed process using `exec.CommandContext` or Docker API.
+### Phase 6: Rootless Execution & ToolSpec Seeding
+**Goal:** Implement real Podman rootless isolation and wire up the backend database to replace frontend UI mocks with real ToolSpecs.
+**Requirements:** EXEC-06, EXEC-07, TOOL-05, UI-04
 
-### Phase 2: File Handling & Job Lifecycle
-**Goal:** Support inputs/outputs, artifacts, and capture job results.
-**Requirements:** FILE-01, FILE-02, FILE-03, EXEC-02
 **Success Criteria:**
-1. Users can upload an input file to an isolated job workspace.
-2. The job runs and writes outputs to a designated folder.
-3. System captures stdout, stderr, and exit code.
-4. Users can download the resulting artifact securely.
-
-### Phase 3: Tool Administration & LLM Pipeline
-**Goal:** Implement the Eino LLM pipeline to draft ToolSpecs from raw help/docs.
-**Requirements:** TOOL-01, TOOL-02, TOOL-03
-**Success Criteria:**
-1. The discovery engine extracts help and version information from a target binary.
-2. The CloudWeGo Eino pipeline parses this output and generates a draft ToolSpec YAML.
-3. Maintainers can review, edit, and submit the draft ToolSpec.
-4. Administrators can approve ToolSpecs for production use.
-
-### Phase 4: Frontend UI, Streaming & Presets
-**Goal:** Generate the React SPA, stream logs, and enable presets and auditing.
-**Requirements:** UI-01, UI-02, UI-03, EXEC-03, AUDIT-01, PRESET-01
-**Success Criteria:**
-1. The React SPA dynamically renders a form based on a ToolSpec.
-2. Job execution status, stdout, and stderr are streamed to the frontend via SSE.
-3. Users can save successful job parameters as presets and reload them.
-4. An audit log correctly records execution details.
-
-### Phase 5: Backend API Wiring & Global Verification
-**Goal:** Create the `main.go` entrypoint, wire up API routes, and formally verify all orphaned requirements from previous phases.
-**Requirements:** EXEC-01, EXEC-04, EXEC-05, TOOL-04, FILE-01, FILE-02, FILE-03, EXEC-02, TOOL-01, TOOL-02, TOOL-03, UI-01, UI-02, UI-03, EXEC-03, AUDIT-01, PRESET-01
-**Gap Closure:** Closes all orphaned requirements and integration gaps identified in the v1.0 milestone audit.
+1. The Go backend automatically seeds the DuckDB database with at least one real ToolSpec (e.g., `nmap` or `ffmpeg`) on startup.
+2. The React UI reads from `/api/catalog` instead of `/api/admin/drafts` (or vice versa), successfully eliminating the fallback mock FFmpeg schema.
+3. Tool executions are routed through `os/exec` calling the local `podman run` binary instead of the `DummyRuntime`.
+4. Containers are spawned using hardened flags (e.g., `--cap-drop=all`, `--security-opt no-new-privileges`, `--read-only`).
 
 ## Traceability Map
-- EXEC-01: Phase 5
-- EXEC-02: Phase 5
-- EXEC-03: Phase 5
-- EXEC-04: Phase 5
-- EXEC-05: Phase 5
-- FILE-01: Phase 5
-- FILE-02: Phase 5
-- FILE-03: Phase 5
-- UI-01: Phase 5
-- UI-02: Phase 5
-- UI-03: Phase 5
-- TOOL-01: Phase 5
-- TOOL-02: Phase 5
-- TOOL-03: Phase 5
-- TOOL-04: Phase 5
-- AUDIT-01: Phase 5
-- PRESET-01: Phase 5
+- EXEC-06: Phase 6
+- EXEC-07: Phase 6
+- TOOL-05: Phase 6
+- UI-04: Phase 6
