@@ -36,12 +36,12 @@ func (h *UploadHandler) HandleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	inputDir := h.workspaceManager.GetPath(jobID, "input")
 	// Ensure the workspace exists
-	if _, err := os.Stat(inputDir); os.IsNotExist(err) {
-		http.Error(w, "job workspace not found", http.StatusNotFound)
+	if _, err := h.workspaceManager.InitializeWorkspace(jobID); err != nil {
+		http.Error(w, "failed to initialize job workspace", http.StatusInternalServerError)
 		return
 	}
+	inputDir := h.workspaceManager.GetPath(jobID, "input")
 
 	for {
 		part, err := reader.NextPart()

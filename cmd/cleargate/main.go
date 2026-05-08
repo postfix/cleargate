@@ -68,6 +68,7 @@ runtime:
 	mux.HandleFunc("POST /api/upload", uploadHandler.HandleUpload)
 	mux.HandleFunc("GET /api/download", downloadHandler.HandleDownload)
 	mux.HandleFunc("POST /api/execute", executeHandler.HandleExecute)
+	mux.HandleFunc("GET /api/jobs/{id}/events", executeHandler.HandleEvents)
 	mux.HandleFunc("GET /api/catalog", catalogHandler.HandleListCatalog)
 	
 	mux.HandleFunc("POST /api/presets", presetHandler.HandleSavePreset)
