@@ -76,11 +76,12 @@ type Unpack struct {
 }
 
 type Flag struct {
-	ID       string      `yaml:"id"`
-	Type     string      `yaml:"type"`
-	Required bool        `yaml:"required,omitempty"`
-	Default  interface{} `yaml:"default,omitempty"`
-	Values   []string    `yaml:"values,omitempty"`
+	ID         string      `yaml:"id"`
+	Type       string      `yaml:"type"`
+	FlagString string      `yaml:"flag,omitempty"`
+	Required   bool        `yaml:"required,omitempty"`
+	Default    interface{} `yaml:"default,omitempty"`
+	Values     []string    `yaml:"values,omitempty"`
 	Cli      CliRender   `yaml:"cli,omitempty"`
 	Ui       UiRender    `yaml:"ui,omitempty"`
 }

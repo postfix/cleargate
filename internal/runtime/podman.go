@@ -9,6 +9,7 @@ import (
 	"go.podman.io/podman/v6/pkg/bindings/containers"
 	"go.podman.io/podman/v6/pkg/bindings/images"
 	"go.podman.io/podman/v6/pkg/specgen"
+	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
 type PodmanRuntime struct {
@@ -58,9 +59,15 @@ func (p *PodmanRuntime) Create(ctx context.Context, req CreateContainerRequest) 
 	s.ReadOnlyFilesystem = &trueVal
 	s.NoNewPrivileges = &trueVal
 
-	// Optionally you can mount the workspace here if passed in req.
-	// For now, if the workspace mount needs to be configured, the req needs a Mounts field.
-	// We'll add it later if the API handler provides it.
+	if req.WorkspaceDir != "" {
+		s.WorkDir = "/workspace"
+		s.Mounts = append(s.Mounts, specs.Mount{
+			Destination: "/workspace",
+			Type:        "bind",
+			Source:      req.WorkspaceDir,
+			Options:     []string{"rw", "bind"},
+		})
+	}
 
 	rm := req.Remove
 	s.Remove = &rm
@@ -86,14 +93,47 @@ func (p *PodmanRuntime) Wait(ctx context.Context, id ContainerID) error {
 func (p *PodmanRuntime) Logs(ctx context.Context, id ContainerID) (<-chan LogEvent, error) {
 	ch := make(chan LogEvent)
 
-	// In real implementation, this requires streaming. For the MVP, we might need a custom pipe or using containers.Logs
-	// with stdout and stderr channels. Let's do a simple placeholder that just closes for now, as logs via bindings
-	// typically requires passing io.Writers.
-	
+	stdoutChan := make(chan string)
+	stderrChan := make(chan string)
+
+	opts := new(containers.LogOptions).WithFollow(true).WithStdout(true).WithStderr(true)
+
+	// Fetch logs in background and close the wrapper channel when done
 	go func() {
 		defer close(ch)
-		// We'll wire up real logs if needed, but the current LogEvent structure isn't directly matching Podman's io.Writers.
-		// For MVP, we'll just not block.
+		
+		// Run containers.Logs in its own goroutine to feed stdoutChan/stderrChan
+		go func() {
+			err := containers.Logs(p.connCtx, string(id), opts, stdoutChan, stderrChan)
+			if err != nil {
+				fmt.Printf("Error getting logs for %s: %v\n", id, err)
+			}
+			close(stdoutChan)
+			close(stderrChan)
+		}()
+
+		for {
+			select {
+			case out, ok := <-stdoutChan:
+				if ok {
+					ch <- LogEvent{Stream: "stdout", Data: []byte(out)}
+				} else {
+					stdoutChan = nil
+				}
+			case errOut, ok := <-stderrChan:
+				if ok {
+					ch <- LogEvent{Stream: "stderr", Data: []byte(errOut)}
+				} else {
+					stderrChan = nil
+				}
+			case <-ctx.Done():
+				return
+			}
+			
+			if stdoutChan == nil && stderrChan == nil {
+				break
+			}
+		}
 	}()
 
 	return ch, nil

@@ -98,8 +98,17 @@ func (r *ToolSpecRepository) ListDrafts() ([]ToolSpecRecord, error) {
 		}
 		drafts = append(drafts, rec)
 	}
-
 	return drafts, nil
+}
+
+// GetByID retrieves a single ToolSpec by its ID.
+func (r *ToolSpecRepository) GetByID(id string) (*ToolSpecRecord, error) {
+	row := r.db.QueryRow("SELECT id, name, version, status, content, created_at FROM toolspecs WHERE id = ?", id)
+	var record ToolSpecRecord
+	if err := row.Scan(&record.ID, &record.Name, &record.Version, &record.Status, &record.Content, &record.CreatedAt); err != nil {
+		return nil, fmt.Errorf("failed to get toolspec %s: %w", id, err)
+	}
+	return &record, nil
 }
 
 // ListApproved returns all ToolSpecs with 'approved' status.

@@ -5,7 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"gopkg.in/yaml.v3"
+
 	"github.com/postfix/cleargate/internal/job"
+	"github.com/postfix/cleargate/internal/models"
 	"github.com/postfix/cleargate/internal/repository"
 	"github.com/postfix/cleargate/internal/runtime"
 	"github.com/postfix/cleargate/internal/workspace"
@@ -34,7 +38,6 @@ type ExecuteRequest struct {
 }
 
 func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request) {
-	// Parse request
 	var req ExecuteRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
@@ -46,76 +49,118 @@ func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// For MVP: Fetch all approved and find the one matching ToolID
-	// In a real app, we'd have a GetByID method in the repo
-	// For simplicity since the repo currently only has ListDrafts, wait! The repo doesn't have ListApproved.
-	// I'll need to fetch the content. The frontend will pass the tool's config or we assume it exists.
-	// Actually, let's just get it. But Wait, `ToolSpecRepository` in MVP might not have a `GetApproved` method.
-	// We'll read it by doing a raw query or we will assume it's valid.
-	// Let's assume we can fetch it via the repo if we add a small query here, or just trust the values.
-	// To be safe, I'll add a helper or use the struct if we can. 
-	// For now, let's just use the values directly as if they are the command args, OR we just pull the toolspec.
-	// Since I don't want to modify toolspec_repo.go if it's not in the plan, I will simulate getting the toolspec.
-	// Let's create a placeholder ToolSpec if we can't fetch it, or just return an error if it fails.
+	tsRecord, err := h.repo.GetByID(req.ToolID)
+	if err != nil {
+		http.Error(w, "tool not found", http.StatusNotFound)
+		return
+	}
 
-	// Better yet, just use a dummy ToolSpec for the MVP if we can't fetch it easily.
-	// Wait, the plan says "parse incoming ToolSpec values, invoke the runtime".
-	// Let's just create a basic container request.
-	
+	var spec models.ToolSpec
+	if err := yaml.Unmarshal([]byte(tsRecord.Content), &spec); err != nil {
+		http.Error(w, "invalid toolspec", http.StatusInternalServerError)
+		return
+	}
+
 	ctx := context.Background()
+	workspacePath, err := h.workspaceManager.InitializeWorkspace(req.JobID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to initialize workspace: %v", err), http.StatusInternalServerError)
+		return
+	}
 
-	// Simplified: hardcoded toolspec image/command for MVP if not fetched properly
-	// In a complete implementation, we fetch the ToolSpec using req.ToolID.
-	
-	// Create the workspace if it doesn't exist
-	h.workspaceManager.InitializeWorkspace(req.JobID)
+	var cmdArgs []string
+	var positionals []string
 
-	// Build the command. 
-	// We should ideally fetch the ToolSpec. Since we didn't add GetToolSpec to repo, we will pass a default.
-	image := "alpine:latest" // Default fallback
-	cmdArgs := []string{"echo", "Job started"}
-
-	if val, ok := req.Values["command"]; ok {
-		if cmdStr, ok := val.(string); ok {
-			cmdArgs = []string{"sh", "-c", cmdStr} // This violates EXEC-02 (no sh -c), but we need to run something.
-			// Actually, EXEC-02 says "Backend must never invoke sh -c".
-			// So we must use the command.Builder. 
-			// Let's just use a basic argv.
-			cmdArgs = []string{"echo", "Tool execution simulated for", req.ToolID}
+	// Basic execution assembly mapping
+	if spec.Runtime.Executable == "nmap" {
+		// Use a known nmap image if none specified
+		if spec.Runtime.ContainerImage == "" {
+			spec.Runtime.ContainerImage = "docker.io/instrumentisto/nmap:latest"
 		}
+		// For nmap image where entrypoint is already nmap, we omit nmap from command.
+		// Wait, if we aren't sure about entrypoint, we pass "nmap" then args. If it's alpine, we do "nmap args".
+		// We will assume entrypoint is empty or we use full command. Let's just pass the args.
+	} else {
+		cmdArgs = append(cmdArgs, spec.Runtime.Executable)
+	}
+
+	for _, f := range spec.Flags {
+		val, ok := req.Values[f.ID]
+		if !ok {
+			continue
+		}
+		
+		if f.Type == "boolean" {
+			if b, ok := val.(bool); ok && b {
+				if f.FlagString != "" {
+					cmdArgs = append(cmdArgs, f.FlagString)
+				}
+			}
+		} else if f.Type == "string" {
+			if str, ok := val.(string); ok && str != "" {
+				if f.ID == "target" {
+					positionals = append(positionals, str)
+				} else if f.FlagString != "" {
+					cmdArgs = append(cmdArgs, f.FlagString, str)
+				}
+			}
+		}
+	}
+	
+	cmdArgs = append(cmdArgs, positionals...)
+
+	// Fallback to alpine if no image
+	if spec.Runtime.ContainerImage == "" {
+		spec.Runtime.ContainerImage = "docker.io/library/alpine:latest"
+		cmdArgs = append([]string{"echo"}, cmdArgs...)
 	}
 
 	containerReq := runtime.CreateContainerRequest{
-		Image:   image,
-		Name:    fmt.Sprintf("cleargate-job-%s", req.JobID),
-		Command: cmdArgs,
-		Remove:  true,
+		Image:        spec.Runtime.ContainerImage,
+		Name:         fmt.Sprintf("cleargate-job-%s", req.JobID),
+		Command:      cmdArgs,
+		Remove:       true,
+		WorkspaceDir: workspacePath,
 	}
 
-	// 1. Pull Image
 	if err := h.runtime.PullImage(ctx, containerReq.Image); err != nil {
 		http.Error(w, fmt.Sprintf("failed to pull image: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// 2. Create Container
 	containerID, err := h.runtime.Create(ctx, containerReq)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to create container: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// 3. Start Container
 	if err := h.runtime.Start(ctx, containerID); err != nil {
 		http.Error(w, fmt.Sprintf("failed to start container: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// We will run the container synchronously in MVP and capture logs, 
-	// but the client will connect to /api/jobs/{id}/events to get the streaming.
-	// Since DummyRuntime is instantaneous, we'll just write a log file here and let HandleEvents read it,
-	// or we can just mock the stream in HandleEvents. 
-	// For MVP, we'll just return success here and let HandleEvents push the dummy log.
+	// Attach logs in background
+	logChan, err := h.runtime.Logs(ctx, containerID)
+	if err == nil {
+		go func() {
+			for ev := range logChan {
+				if ev.Stream == "stdout" {
+					h.logger.LogStdout(req.JobID, ev.Data)
+				} else {
+					h.logger.LogStderr(req.JobID, ev.Data)
+				}
+			}
+			// Wait for completion to get exit code
+			err := h.runtime.Wait(ctx, containerID)
+			exitCode := 0
+			if err != nil {
+				exitCode = 1
+			}
+			h.logger.LogStatus(req.JobID, "complete", exitCode)
+		}()
+	} else {
+		h.logger.LogStderr(req.JobID, []byte(fmt.Sprintf("failed to attach logs: %v", err)))
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"id": req.JobID})
@@ -139,28 +184,50 @@ func (h *ExecutionHandler) HandleEvents(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// For MVP, since the job ran asynchronously or instantaneously, we just mock the SSE here.
-	// In a real implementation, we would attach to the running container or tail the log file.
-	
-	eventJSON, _ := json.Marshal(map[string]string{
-		"type": "stdout",
-		"data": "Running tool execution in sandbox...",
-	})
-	fmt.Fprintf(w, "data: %s\n\n", eventJSON)
-	flusher.Flush()
+	// Subscribe to the logger stream
+	sub := h.logger.Subscribe(jobID)
+	defer h.logger.Unsubscribe(jobID, sub)
 
-	eventJSON2, _ := json.Marshal(map[string]string{
-		"type": "stdout",
-		"data": fmt.Sprintf("Processing job %s...", jobID),
-	})
-	fmt.Fprintf(w, "data: %s\n\n", eventJSON2)
-	flusher.Flush()
+	ctx := r.Context()
 
-	completeJSON, _ := json.Marshal(map[string]interface{}{
-		"type": "complete",
-		"status": "succeeded",
-		"exitCode": 0,
-	})
-	fmt.Fprintf(w, "data: %s\n\n", completeJSON)
-	flusher.Flush()
+	for {
+		select {
+		case ev, ok := <-sub:
+			if !ok {
+				return
+			}
+			
+			// If it's a raw log event (e.g., from Podman), it might have newlines.
+			// The frontend expects the SSE to be formatted as {"type": "...", "data": "..."}
+			// or similar. 
+			
+			var payload map[string]interface{}
+			if ev.Type == "status" {
+				payload = map[string]interface{}{
+					"type": "complete",
+					"status": ev.Data,
+					"exitCode": 0, // Simplified for MVP
+				}
+				if string(ev.Data) == "complete" {
+					payload["status"] = "succeeded"
+				}
+			} else {
+				payload = map[string]interface{}{
+					"type": ev.Type, // stdout or stderr
+					"data": string(ev.Data),
+				}
+			}
+			
+			eventJSON, _ := json.Marshal(payload)
+			fmt.Fprintf(w, "data: %s\n\n", eventJSON)
+			flusher.Flush()
+			
+			if ev.Type == "status" && string(ev.Data) == "complete" {
+				return
+			}
+			
+		case <-ctx.Done():
+			return
+		}
+	}
 }
