@@ -32,7 +32,7 @@
 ## v1.1 Requirements
 
 ### Sandbox Hardening
-- [ ] **EXEC-06**: Real Podman Integration — Replace DummyRuntime with os/exec calls to local Podman.
+- [ ] **EXEC-06**: Real Podman Integration — Replace DummyRuntime with the Podman Go Bindings (`github.com/containers/podman/v4/pkg/bindings`) connecting to the Podman API socket.
 - [ ] **EXEC-07**: Security Profile — Enforce rootless execution with --cap-drop=all, --read-only, and privilege drop flags.
 
 ### Real ToolSpecs

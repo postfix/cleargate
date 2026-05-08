@@ -11,7 +11,7 @@
 **Success Criteria:**
 1. The Go backend automatically seeds the DuckDB database with at least one real ToolSpec (e.g., `nmap` or `ffmpeg`) on startup.
 2. The React UI reads from `/api/catalog` instead of `/api/admin/drafts` (or vice versa), successfully eliminating the fallback mock FFmpeg schema.
-3. Tool executions are routed through `os/exec` calling the local `podman run` binary instead of the `DummyRuntime`.
+3. Tool executions are routed through the official Podman Go Bindings over the API socket instead of the `DummyRuntime`.
 4. Containers are spawned using hardened flags (e.g., `--cap-drop=all`, `--security-opt no-new-privileges`, `--read-only`).
 
 ## Traceability Map
