@@ -29,9 +29,18 @@
 - [ ] **AUDIT-01**: System logs who ran what, when, with which inputs, ToolSpec version, and sandbox policy.
 - [ ] **PRESET-01**: Users and teams can save successful job runs as reusable presets.
 
+## v1.1 Requirements
+
+### Sandbox Hardening
+- [ ] **EXEC-06**: Real Podman Integration — Replace DummyRuntime with os/exec calls to local Podman.
+- [ ] **EXEC-07**: Security Profile — Enforce rootless execution with --cap-drop=all, --read-only, and privilege drop flags.
+
+### Real ToolSpecs
+- [ ] **TOOL-05**: Database Seeder — Automatically load a real application ToolSpec (e.g. nmap or ffmpeg) into DuckDB on backend startup.
+- [ ] **UI-04**: Remove UI Mocks — Fix the frontend to read the real catalog and eliminate hardcoded mock ToolSpecs.
+
 ## Deferred (v2)
 
-- [ ] **ADV-01**: Rootless Podman hardened sandbox profile.
 - [ ] **ADV-02**: WebSocket-based streaming (v1 uses SSE).
 
 ## Out of Scope
@@ -62,3 +71,7 @@
 | TOOL-04 | Validate schemas | Phase 5 | Pending |
 | AUDIT-01 | Audit logging | Phase 5 | Pending |
 | PRESET-01 | Save presets | Phase 5 | Pending |
+| EXEC-06 | Real Podman integration | Phase 6 | Pending |
+| EXEC-07 | Security Profile | Phase 6 | Pending |
+| TOOL-05 | Database Seeder | Phase 6 | Pending |
+| UI-04 | Remove UI Mocks | Phase 6 | Pending |
