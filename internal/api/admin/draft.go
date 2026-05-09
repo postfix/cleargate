@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/postfix/cleargate/internal/llm"
 	"github.com/postfix/cleargate/internal/repository"
 )
@@ -33,6 +34,12 @@ func (h *AdminHandler) HandleCreateDraft(w http.ResponseWriter, r *http.Request)
 	spec, err := h.assistant.GenerateDraft(r.Context(), req.HelpText)
 	if err != nil {
 		http.Error(w, "failed to generate draft", http.StatusInternalServerError)
+		return
+	}
+
+	v := validator.New()
+	if err := v.Struct(spec); err != nil {
+		http.Error(w, "validation failed: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 

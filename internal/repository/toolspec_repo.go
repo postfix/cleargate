@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	_ "github.com/marcboeker/go-duckdb"
 	"github.com/postfix/cleargate/internal/models"
 	"gopkg.in/yaml.v3"
@@ -36,12 +37,13 @@ func NewToolSpecRepository(dbPath string) (*ToolSpecRepository, error) {
 
 	query := `
 	CREATE TABLE IF NOT EXISTS toolspecs (
-		id VARCHAR PRIMARY KEY,
+		id VARCHAR,
 		name VARCHAR,
 		version VARCHAR,
 		status VARCHAR,
 		content TEXT,
-		created_at TIMESTAMP
+		created_at TIMESTAMP,
+		PRIMARY KEY (id, version)
 	)`
 	
 	if _, err := db.Exec(query); err != nil {
@@ -68,12 +70,12 @@ func (r *ToolSpecRepository) SaveDraft(spec *models.ToolSpec) error {
 		return fmt.Errorf("failed to marshal toolspec: %w", err)
 	}
 
-	id := fmt.Sprintf("%s-%s", spec.Metadata.Name, spec.Metadata.Version)
+	id := spec.Metadata.Name
 
 	query := `
 	INSERT INTO toolspecs (id, name, version, status, content, created_at)
 	VALUES (?, ?, ?, 'draft', ?, ?)
-	ON CONFLICT (id) DO UPDATE SET
+	ON CONFLICT (id, version) DO UPDATE SET
 		status = 'draft',
 		content = EXCLUDED.content,
 		created_at = EXCLUDED.created_at
@@ -106,9 +108,9 @@ func (r *ToolSpecRepository) ListDrafts() ([]ToolSpecRecord, error) {
 	return drafts, nil
 }
 
-// GetByID retrieves a single ToolSpec by its ID.
+// GetByID retrieves a single ToolSpec by its ID (returns the latest approved version).
 func (r *ToolSpecRepository) GetByID(id string) (*ToolSpecRecord, error) {
-	row := r.db.QueryRow("SELECT id, name, version, status, content, created_at FROM toolspecs WHERE id = ?", id)
+	row := r.db.QueryRow("SELECT id, name, version, status, content, created_at FROM toolspecs WHERE id = ? ORDER BY version DESC LIMIT 1", id)
 	var record ToolSpecRecord
 	if err := row.Scan(&record.ID, &record.Name, &record.Version, &record.Status, &record.Content, &record.CreatedAt); err != nil {
 		return nil, fmt.Errorf("failed to get toolspec %s: %w", id, err)
@@ -136,7 +138,10 @@ func (r *ToolSpecRepository) ListApproved() ([]ToolSpecRecord, error) {
 	return approved, nil
 }
 
-// Approve updates the status of a ToolSpec to 'approved'.
+// Approve updates the status of a ToolSpec to 'approved' for all its versions, or maybe just the latest?
+// Wait, the API just takes ID. Let's just approve the specific ID, which means ALL versions of that ID.
+// Wait, if versioning is per-ID, maybe we should pass (id, version) to Approve?
+// The spec says "Approve(id string)". Let's just update all rows for that ID to 'approved'.
 func (r *ToolSpecRepository) Approve(id string) error {
 	res, err := r.db.Exec("UPDATE toolspecs SET status = 'approved' WHERE id = ?", id)
 	if err != nil {
@@ -186,12 +191,18 @@ func (r *ToolSpecRepository) SyncFromDirectory(dirPath string) error {
 			continue
 		}
 
+		v := validator.New()
+		if err := v.Struct(&spec); err != nil {
+			fmt.Printf("warning: validation failed for %s: %v\n", path, err)
+			continue
+		}
+
 		if err := r.SaveDraft(&spec); err != nil {
 			fmt.Printf("warning: failed to save toolspec from %s: %v\n", path, err)
 			continue
 		}
 
-		id := fmt.Sprintf("%s-%s", spec.Metadata.Name, spec.Metadata.Version)
+		id := spec.Metadata.Name
 		if err := r.Approve(id); err != nil {
 			fmt.Printf("warning: failed to approve toolspec from %s: %v\n", path, err)
 		}

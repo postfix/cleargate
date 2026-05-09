@@ -74,6 +74,22 @@ func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Validate unknown flags
+	allowedKeys := make(map[string]bool)
+	for _, f := range spec.Flags {
+		allowedKeys[f.ID] = true
+	}
+	for _, in := range spec.Inputs {
+		allowedKeys[in.ID] = true
+	}
+
+	for key := range req.Values {
+		if !allowedKeys[key] {
+			http.Error(w, fmt.Sprintf("Unknown flag/input: %s", key), http.StatusBadRequest)
+			return
+		}
+	}
+
 	var cmdArgs []string
 	var positionals []string
 
@@ -152,10 +168,17 @@ func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request)
 	// Register job in the registry
 	h.registry.Register(req.JobID, req.ToolID)
 
+	timeout := spec.Runtime.TimeoutSeconds
+	if timeout <= 0 {
+		timeout = 300 // default 5 minutes
+	}
+	execCtx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+
 	// Attach logs in background
-	logChan, err := h.runtime.Logs(ctx, containerID)
+	logChan, err := h.runtime.Logs(execCtx, containerID)
 	if err == nil {
 		go func() {
+			defer cancel()
 			for ev := range logChan {
 				if ev.Stream == "stdout" {
 					h.logger.LogStdout(req.JobID, ev.Data)
@@ -164,10 +187,10 @@ func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request)
 				}
 			}
 			// Wait for completion to get exit code
-			exitCode, err := h.runtime.Wait(ctx, containerID)
+			exitCode, err := h.runtime.Wait(execCtx, containerID)
 			if err != nil {
 				exitCode = -1
-				h.logger.LogStderr(req.JobID, []byte(fmt.Sprintf("wait error: %v", err)))
+				h.logger.LogStderr(req.JobID, []byte(fmt.Sprintf("wait error (possibly timeout): %v", err)))
 			}
 			h.registry.Complete(req.JobID, exitCode)
 			h.logger.LogStatus(req.JobID, "complete", exitCode)
