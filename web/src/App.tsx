@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import { Terminal } from 'lucide-react'
 import CatalogPage from './pages/CatalogPage'
 import ExecutionPage from './pages/ExecutionPage'
+import AuditPage from './pages/AuditPage'
 import './index.css'
 import './App.css'
 
@@ -16,6 +17,7 @@ function App() {
           </Link>
           <nav className="nav-tabs">
             <Link to="/" className="nav-tab active">Catalog</Link>
+            <Link to="/audit" className="nav-tab">Audit Log</Link>
           </nav>
         </header>
         
@@ -23,6 +25,7 @@ function App() {
           <Routes>
             <Route path="/" element={<CatalogPage />} />
             <Route path="/tool/:id" element={<ExecutionPage />} />
+            <Route path="/audit" element={<AuditPage />} />
           </Routes>
         </main>
       </div>

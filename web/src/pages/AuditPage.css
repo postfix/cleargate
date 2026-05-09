@@ -1,0 +1,6 @@
+.page-container table th, .page-container table td {
+  border-bottom: 1px solid var(--color-border);
+}
+.page-container table tr:last-child td {
+  border-bottom: none;
+}

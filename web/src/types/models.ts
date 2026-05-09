@@ -35,6 +35,7 @@ export interface Input {
 
 export interface Preset {
   id: string;
+  tool_id?: string;
   name: string;
   values: Record<string, any>;
 }

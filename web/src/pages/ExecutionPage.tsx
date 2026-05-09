@@ -62,7 +62,7 @@ export default function ExecutionPage() {
       .catch(() => { /* ignore */ });
 
     // Load user-saved presets
-    fetch('/api/presets')
+    fetch(`/api/presets?tool_id=${id}`)
       .then(res => res.json())
       .then((presets: Preset[]) => setSavedPresets(presets || []))
       .catch(() => { /* ignore */ });
@@ -136,10 +136,12 @@ export default function ExecutionPage() {
     const presetName = prompt("Enter a name for this preset:");
     if (!presetName) return;
     
-    const newPreset: Preset = {
+    const newPreset: Preset & { isUserDefined?: boolean } = {
       id: presetName.toLowerCase().replace(/\s+/g, '-'),
+      tool_id: id,
       name: presetName,
       values: { ...formState },
+      isUserDefined: true,
     };
 
     try {
@@ -152,6 +154,18 @@ export default function ExecutionPage() {
       setSavedPresets(prev => [...prev, newPreset]);
     } catch (err: any) {
       console.error('Failed to save preset:', err);
+    }
+  };
+
+  const handleDeletePreset = async (presetId: string) => {
+    try {
+      const res = await fetch(`/api/presets?id=${presetId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete preset');
+      setSavedPresets(prev => prev.filter(p => p.id !== presetId));
+    } catch (err: any) {
+      console.error('Failed to delete preset:', err);
     }
   };
 
@@ -171,9 +185,10 @@ export default function ExecutionPage() {
       </div>
 
       {(() => {
-        const allPresets = [...(toolSpec?.presets || []), ...savedPresets];
+        const mappedSaved = savedPresets.map(p => ({ ...p, isUserDefined: true }));
+        const allPresets = [...(toolSpec?.presets || []), ...mappedSaved];
         return allPresets.length > 0 ? (
-          <PresetBar presets={allPresets} onSelect={handleApplyPreset} />
+          <PresetBar presets={allPresets} onSelect={handleApplyPreset} onDelete={handleDeletePreset} />
         ) : null;
       })()}
 
