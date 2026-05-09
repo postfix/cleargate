@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 
@@ -22,15 +23,17 @@ type ExecutionHandler struct {
 	logger           *job.Logger
 	repo             *repository.ToolSpecRepository
 	registry         *job.Registry
+	auditRepo        *repository.AuditRepository
 }
 
-func NewExecutionHandler(r runtime.ContainerRuntime, wm *workspace.Manager, l *job.Logger, repo *repository.ToolSpecRepository, reg *job.Registry) *ExecutionHandler {
+func NewExecutionHandler(r runtime.ContainerRuntime, wm *workspace.Manager, l *job.Logger, repo *repository.ToolSpecRepository, reg *job.Registry, auditRepo *repository.AuditRepository) *ExecutionHandler {
 	return &ExecutionHandler{
 		runtime:          r,
 		workspaceManager: wm,
 		logger:           l,
 		repo:             repo,
 		registry:         reg,
+		auditRepo:        auditRepo,
 	}
 }
 
@@ -168,6 +171,13 @@ func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request)
 			}
 			h.registry.Complete(req.JobID, exitCode)
 			h.logger.LogStatus(req.JobID, "complete", exitCode)
+			
+			h.auditRepo.Log(&models.AuditLog{
+				JobID:     req.JobID,
+				ToolID:    req.ToolID,
+				ExitCode:  exitCode,
+				CreatedAt: time.Now(),
+			})
 		}()
 	} else {
 		h.logger.LogStderr(req.JobID, []byte(fmt.Sprintf("failed to attach logs: %v", err)))

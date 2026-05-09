@@ -12,10 +12,11 @@ import (
 type AdminHandler struct {
 	assistant llm.TemplateAssistant
 	repo      *repository.ToolSpecRepository
+	auditRepo *repository.AuditRepository
 }
 
-func NewAdminHandler(assistant llm.TemplateAssistant, repo *repository.ToolSpecRepository) *AdminHandler {
-	return &AdminHandler{assistant: assistant, repo: repo}
+func NewAdminHandler(assistant llm.TemplateAssistant, repo *repository.ToolSpecRepository, auditRepo *repository.AuditRepository) *AdminHandler {
+	return &AdminHandler{assistant: assistant, repo: repo, auditRepo: auditRepo}
 }
 
 type DraftRequest struct {
@@ -72,4 +73,15 @@ func (h *AdminHandler) HandleApproveDraft(w http.ResponseWriter, r *http.Request
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "approved"})
+}
+
+func (h *AdminHandler) HandleListAuditLogs(w http.ResponseWriter, r *http.Request) {
+	logs, err := h.auditRepo.List()
+	if err != nil {
+		http.Error(w, "failed to list audit logs", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(logs)
 }

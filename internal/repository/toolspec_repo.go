@@ -56,6 +56,11 @@ func (r *ToolSpecRepository) Close() error {
 	return r.db.Close()
 }
 
+// DB returns the underlying sql.DB instance
+func (r *ToolSpecRepository) DB() *sql.DB {
+	return r.db
+}
+
 // SaveDraft inserts or updates a ToolSpec as a draft.
 func (r *ToolSpecRepository) SaveDraft(spec *models.ToolSpec) error {
 	contentBytes, err := yaml.Marshal(spec)

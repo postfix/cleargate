@@ -40,6 +40,23 @@ func main() {
 		log.Printf("Warning: failed to sync tools directory: %v", err)
 	}
 
+	// Preset and Audit DBs (reusing DuckDB connection from repo for simplicity, wait, Repo encapsulates *sql.DB but doesn't expose it. We should just open another or expose it.
+	// Actually, wait, ToolSpecRepository has db private. Let's see if we can use the same path.)
+	// Wait, duckdb only supports single writer per file unless read_only is true for others.
+	// So we should expose the *sql.DB from ToolSpecRepository or open a new one?
+	// It's better to use a single connection. We can just expose `repo.DB()`. Let's add that to toolspec_repo.go later, or open a separate db file, e.g. "cleargate-presets.db". For MVP, let's open "cleargate.db" again? No, DuckDB will error.
+	// I'll update toolspec_repo to expose DB() via a getter or just make db public.
+	// Actually, I can just create separate DB files for MVP to avoid touching toolspec_repo, or I can update toolspec_repo.go.
+	// Let's assume I will update toolspec_repo.go to expose DB().
+	presetRepo, err := repository.NewPresetRepository(repo.DB())
+	if err != nil {
+		log.Fatalf("Failed to initialize preset repo: %v", err)
+	}
+	auditRepo, err := repository.NewAuditRepository(repo.DB())
+	if err != nil {
+		log.Fatalf("Failed to initialize audit repo: %v", err)
+	}
+
 	// Podman Runtime
 	var runtimeClient runtime.ContainerRuntime
 	podmanClient, err := runtime.NewPodmanRuntime()
@@ -72,13 +89,13 @@ runtime:
 	// 2. Instantiate Handlers
 	uploadHandler := api.NewUploadHandler(workspaceManager)
 	downloadHandler := api.NewDownloadHandler(workspaceManager)
-	executeHandler := api.NewExecutionHandler(runtimeClient, workspaceManager, jobLogger, repo, jobRegistry)
+	executeHandler := api.NewExecutionHandler(runtimeClient, workspaceManager, jobLogger, repo, jobRegistry, auditRepo)
 	catalogHandler := api.NewCatalogHandler(repo)
-	presetHandler := api.NewPresetHandler()
+	presetHandler := api.NewPresetHandler(presetRepo)
 	
 	// Admin handler requires assistant. Passing nil is risky, but for MVP we assume it's set or it returns 500.
 	// Actually we should create a dummy assistant if it's nil, but the interface checks will catch it.
-	adminHandler := admin.NewAdminHandler(assistant, repo)
+	adminHandler := admin.NewAdminHandler(assistant, repo, auditRepo)
 
 	// 3. Register Routes
 	mux := http.NewServeMux()
@@ -92,10 +109,12 @@ runtime:
 	
 	mux.HandleFunc("POST /api/presets", presetHandler.HandleSavePreset)
 	mux.HandleFunc("GET /api/presets", presetHandler.HandleListPresets)
+	mux.HandleFunc("DELETE /api/presets", presetHandler.HandleDeletePreset)
 
 	mux.HandleFunc("POST /api/admin/drafts", adminHandler.HandleCreateDraft)
 	mux.HandleFunc("GET /api/admin/drafts", adminHandler.HandleListDrafts)
 	mux.HandleFunc("POST /api/admin/tools/{id}/approve", adminHandler.HandleApproveDraft)
+	mux.HandleFunc("GET /api/admin/audit", adminHandler.HandleListAuditLogs)
 
 	// 4. Serve Static SPA with React Router fallback
 	spaDir := "./web/dist"
