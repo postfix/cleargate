@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type ToolSpec struct {
 	APIVersion string         `yaml:"apiVersion"`
 	Kind       string         `yaml:"kind"`
@@ -123,6 +125,7 @@ type Output struct {
 
 type Preset struct {
 	ID          string                 `yaml:"id" json:"id"`
+	ToolID      string                 `yaml:"tool_id" json:"tool_id"`
 	Name        string                 `yaml:"name" json:"name"`
 	Description string                 `yaml:"description,omitempty" json:"description,omitempty"`
 	Visibility  string                 `yaml:"visibility,omitempty" json:"visibility,omitempty"`
@@ -150,4 +153,11 @@ type Group struct {
 	ID      string   `yaml:"id"`
 	Type    string   `yaml:"type"`
 	Members []string `yaml:"members"`
+}
+
+type AuditLog struct {
+	JobID     string    `json:"job_id"`
+	ToolID    string    `json:"tool_id"`
+	ExitCode  int       `json:"exit_code"`
+	CreatedAt time.Time `json:"created_at"`
 }
