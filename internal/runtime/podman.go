@@ -65,9 +65,14 @@ func (p *PodmanRuntime) Create(ctx context.Context, req CreateContainerRequest) 
 	if req.WorkspaceDir != "" {
 		s.WorkDir = "/workspace"
 		s.Mounts = append(s.Mounts, specs.Mount{
-			Destination: "/workspace",
+			Destination: "/workspace/input",
 			Type:        "bind",
-			Source:      req.WorkspaceDir,
+			Source:      req.WorkspaceDir + "/input",
+			Options:     []string{"ro", "bind"},
+		}, specs.Mount{
+			Destination: "/workspace/output",
+			Type:        "bind",
+			Source:      req.WorkspaceDir + "/output",
 			Options:     []string{"rw", "bind"},
 		})
 	}
