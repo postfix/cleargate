@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -93,7 +94,6 @@ func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request)
 	}
 
 	var cmdArgs []string
-	var positionals []string
 
 	// Basic execution assembly mapping
 	if spec.Runtime.Executable == "nmap" {
@@ -107,6 +107,12 @@ func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request)
 	} else {
 		cmdArgs = append(cmdArgs, spec.Runtime.Executable)
 	}
+
+	isPositional := make(map[string]int)
+	for _, p := range spec.Positionals {
+		isPositional[p.Source] = p.Order
+	}
+	posArgs := make(map[int]string)
 
 	for _, f := range spec.Flags {
 		val, ok := req.Values[f.ID]
@@ -122,16 +128,47 @@ func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request)
 			}
 		} else if f.Type == "string" {
 			if str, ok := val.(string); ok && str != "" {
-				if f.ID == "target" {
-					positionals = append(positionals, str)
+				if order, ok := isPositional[f.ID]; ok {
+					posArgs[order] = str
 				} else if f.FlagString != "" {
 					cmdArgs = append(cmdArgs, f.FlagString, str)
 				}
 			}
 		}
 	}
-	
-	cmdArgs = append(cmdArgs, positionals...)
+
+	for _, in := range spec.Inputs {
+		val, ok := req.Values[in.ID]
+		if !ok {
+			continue
+		}
+		if str, ok := val.(string); ok && str != "" {
+			path := filepath.Join("/workspace/input", str)
+			if order, ok := isPositional[in.ID]; ok {
+				posArgs[order] = path
+			} else if in.FlagString != "" {
+				cmdArgs = append(cmdArgs, in.FlagString, path)
+			}
+		}
+	}
+
+	for _, out := range spec.Outputs {
+		path := filepath.Join("/workspace/output", out.Path)
+		if order, ok := isPositional[out.ID]; ok {
+			posArgs[order] = path
+		} else if out.FlagString != "" {
+			cmdArgs = append(cmdArgs, out.FlagString, path)
+		}
+	}
+
+	var orders []int
+	for o := range posArgs {
+		orders = append(orders, o)
+	}
+	sort.Ints(orders)
+	for _, o := range orders {
+		cmdArgs = append(cmdArgs, posArgs[o])
+	}
 
 	// Fallback to alpine if no image
 	if spec.Runtime.ContainerImage == "" {

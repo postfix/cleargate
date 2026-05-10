@@ -63,6 +63,7 @@ type Sandbox struct {
 type Input struct {
 	ID                string   `yaml:"id" validate:"required"`
 	Type              string   `yaml:"type" validate:"required"`
+	FlagString        string   `yaml:"flag,omitempty"`
 	Required          bool     `yaml:"required"`
 	Destination       string   `yaml:"destination"`
 	MaxSizeMB         int      `yaml:"maxSizeMB,omitempty"`
@@ -118,6 +119,7 @@ type Positional struct {
 type Output struct {
 	ID           string `yaml:"id"`
 	Type         string `yaml:"type"`
+	FlagString   string `yaml:"flag,omitempty"`
 	Path         string `yaml:"path"`
 	Downloadable bool   `yaml:"downloadable,omitempty"`
 	ContentType  string `yaml:"contentType,omitempty"`

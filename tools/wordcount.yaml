@@ -1,0 +1,48 @@
+apiVersion: cleargate.dev/v1alpha1
+kind: ToolSpec
+metadata:
+  name: wordcount
+  displayName: "Word Counter (Universal Example)"
+  version: "1.0"
+  description: "A universal example tool that takes a file input, counts the lines/words/chars, and outputs to a file."
+  owner: admin
+runtime:
+  executable: wc
+  containerImage: "docker.io/library/alpine:latest"
+  timeoutSeconds: 30
+inputs:
+  - id: textFile
+    type: file
+    required: true
+    flag: "" # It will be mapped as positional if specified in positionals
+outputs:
+  - id: resultFile
+    type: file
+    path: "counts.txt"
+    downloadable: true
+flags:
+  - id: countLines
+    type: boolean
+    flag: "-l"
+    default: true
+    ui:
+      label: "Count Lines"
+      category: "Options"
+  - id: countWords
+    type: boolean
+    flag: "-w"
+    default: true
+    ui:
+      label: "Count Words"
+      category: "Options"
+  - id: countChars
+    type: boolean
+    flag: "-m"
+    default: false
+    ui:
+      label: "Count Characters"
+      category: "Options"
+positionals:
+  - id: p1
+    source: textFile
+    order: 1

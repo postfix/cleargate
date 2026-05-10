@@ -49,10 +49,14 @@ presets:
   - id: quick
     name: Quick Scan
     values:
-      synScan: true
+      synScan: false
       serviceVersion: false
   - id: full
     name: Full Version Scan
     values:
-      synScan: true
+      synScan: false
       serviceVersion: true
+positionals:
+  - id: p1
+    source: target
+    order: 1
