@@ -32,12 +32,12 @@
 ## v1.1 Requirements
 
 ### Sandbox Hardening
-- [ ] **EXEC-06**: Real Podman Integration — Replace DummyRuntime with the Podman Go Bindings (`github.com/containers/podman/v4/pkg/bindings`) connecting to the Podman API socket.
-- [ ] **EXEC-07**: Security Profile — Enforce rootless execution with --cap-drop=all, --read-only, and privilege drop flags.
+- [x] **EXEC-06**: Real Podman Integration — Replace DummyRuntime with the Podman Go Bindings (`github.com/containers/podman/v4/pkg/bindings`) connecting to the Podman API socket.
+- [x] **EXEC-07**: Security Profile — Enforce rootless execution with --cap-drop=all, --read-only, and privilege drop flags.
 
 ### Real ToolSpecs
-- [ ] **TOOL-05**: Database Seeder — Automatically load a real application ToolSpec (e.g. nmap or ffmpeg) into DuckDB on backend startup.
-- [ ] **UI-04**: Remove UI Mocks — Fix the frontend to read the real catalog and eliminate hardcoded mock ToolSpecs.
+- [x] **TOOL-05**: Database Seeder — Automatically load a real application ToolSpec (e.g. nmap or ffmpeg) into DuckDB on backend startup.
+- [x] **UI-04**: Remove UI Mocks — Fix the frontend to read the real catalog and eliminate hardcoded mock ToolSpecs.
 
 ## Deferred (v2)
 
