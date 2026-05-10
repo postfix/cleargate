@@ -87,7 +87,7 @@ runtime:
 `)
 
 	// 2. Instantiate Handlers
-	uploadHandler := api.NewUploadHandler(workspaceManager)
+	uploadHandler := api.NewUploadHandler(workspaceManager, repo, jobRegistry)
 	downloadHandler := api.NewDownloadHandler(workspaceManager)
 	executeHandler := api.NewExecutionHandler(runtimeClient, workspaceManager, jobLogger, repo, jobRegistry, auditRepo)
 	catalogHandler := api.NewCatalogHandler(repo)
@@ -104,6 +104,7 @@ runtime:
 	mux.HandleFunc("GET /api/download", downloadHandler.HandleDownload)
 	mux.HandleFunc("POST /api/execute", executeHandler.HandleExecute)
 	mux.HandleFunc("GET /api/jobs/{id}/events", executeHandler.HandleEvents)
+	mux.HandleFunc("GET /api/jobs/{id}/metadata", executeHandler.HandleJobMetadata)
 	mux.HandleFunc("GET /api/jobs", executeHandler.HandleListJobs)
 	mux.HandleFunc("GET /api/catalog", catalogHandler.HandleListCatalog)
 	

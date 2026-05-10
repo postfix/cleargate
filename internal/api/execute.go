@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -179,10 +181,13 @@ func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request)
 	if err == nil {
 		go func() {
 			defer cancel()
+			var stdoutBytes, stderrBytes int64
 			for ev := range logChan {
 				if ev.Stream == "stdout" {
+					stdoutBytes += int64(len(ev.Data))
 					h.logger.LogStdout(req.JobID, ev.Data)
 				} else {
+					stderrBytes += int64(len(ev.Data))
 					h.logger.LogStderr(req.JobID, ev.Data)
 				}
 			}
@@ -201,6 +206,9 @@ func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request)
 				ExitCode:  exitCode,
 				CreatedAt: time.Now(),
 			})
+
+			// Write metadata.json to workspace
+			h.writeJobMetadata(req.JobID, exitCode, stdoutBytes, stderrBytes)
 		}()
 	} else {
 		h.logger.LogStderr(req.JobID, []byte(fmt.Sprintf("failed to attach logs: %v", err)))
@@ -297,4 +305,56 @@ func (h *ExecutionHandler) HandleListJobs(w http.ResponseWriter, r *http.Request
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(jobs)
+}
+
+// writeJobMetadata scans the output directory and writes metadata.json to the workspace root.
+func (h *ExecutionHandler) writeJobMetadata(jobID string, exitCode int, stdoutBytes, stderrBytes int64) {
+	outputDir := h.workspaceManager.GetPath(jobID, "output")
+	var outputFiles []string
+
+	entries, err := os.ReadDir(outputDir)
+	if err == nil {
+		for _, e := range entries {
+			if !e.IsDir() {
+				outputFiles = append(outputFiles, e.Name())
+			}
+		}
+	}
+	if outputFiles == nil {
+		outputFiles = []string{}
+	}
+
+	meta := models.JobMetadata{
+		ExitCode:    exitCode,
+		StdoutBytes: stdoutBytes,
+		StderrBytes: stderrBytes,
+		OutputFiles: outputFiles,
+	}
+
+	metaBytes, err := json.MarshalIndent(meta, "", "  ")
+	if err != nil {
+		return
+	}
+
+	metaPath := filepath.Join(h.workspaceManager.GetPath(jobID, ""), "metadata.json")
+	os.WriteFile(metaPath, metaBytes, 0644)
+}
+
+// HandleJobMetadata serves the metadata.json for a completed job.
+func (h *ExecutionHandler) HandleJobMetadata(w http.ResponseWriter, r *http.Request) {
+	jobID := r.PathValue("id")
+	if jobID == "" {
+		http.Error(w, "missing job id", http.StatusBadRequest)
+		return
+	}
+
+	metaPath := filepath.Join(h.workspaceManager.GetPath(jobID, ""), "metadata.json")
+	data, err := os.ReadFile(metaPath)
+	if err != nil {
+		http.Error(w, "metadata not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
 }

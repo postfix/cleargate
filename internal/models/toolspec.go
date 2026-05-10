@@ -161,3 +161,11 @@ type AuditLog struct {
 	ExitCode  int       `json:"exit_code"`
 	CreatedAt time.Time `json:"created_at"`
 }
+
+// JobMetadata captures execution results written to the workspace as metadata.json.
+type JobMetadata struct {
+	ExitCode    int      `json:"exit_code"`
+	StdoutBytes int64    `json:"stdout_bytes"`
+	StderrBytes int64    `json:"stderr_bytes"`
+	OutputFiles []string `json:"output_files"`
+}
