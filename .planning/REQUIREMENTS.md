@@ -3,11 +3,11 @@
 ## v1 Requirements
 
 ### Core Execution
-- [ ] **EXEC-01**: User can run approved CLI tools in a sandboxed execution environment (Docker/Podman).
+- [x] **EXEC-01**: User can run approved CLI tools in a sandboxed execution environment (Docker/Podman).
 - [x] **EXEC-02**: System captures stdout, stderr, exit code, metadata, and output files for every run.
-- [ ] **EXEC-03**: System streams job status, stdout, and stderr live to the UI.
-- [ ] **EXEC-04**: Backend compiles validated job values into `argv[]` without using shell execution.
-- [ ] **EXEC-05**: System prevents arbitrary command execution by using structured ToolSpecs.
+- [x] **EXEC-03**: System streams job status, stdout, and stderr live to the UI.
+- [x] **EXEC-04**: Backend compiles validated job values into `argv[]` without using shell execution.
+- [x] **EXEC-05**: System prevents arbitrary command execution by using structured ToolSpecs.
 
 ### File Handling
 - [x] **FILE-01**: User can upload input files for processing.
@@ -15,9 +15,9 @@
 - [x] **FILE-03**: System enforces file extension, size limits, and safe naming.
 
 ### User Interface
-- [ ] **UI-01**: System dynamically generates forms and SPA UI from ToolSpec schemas.
-- [ ] **UI-02**: User can view a catalog of approved tools.
-- [ ] **UI-03**: User can select and apply presets to fill out tool forms.
+- [x] **UI-01**: System dynamically generates forms and SPA UI from ToolSpec schemas.
+- [x] **UI-02**: User can view a catalog of approved tools.
+- [x] **UI-03**: User can select and apply presets to fill out tool forms.
 
 ### Tool Administration
 - [ ] **TOOL-01**: Maintainer can run discovery on a binary or container to extract help/man/docs.
