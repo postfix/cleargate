@@ -293,6 +293,27 @@ func (h *ExecutionHandler) HandleEvents(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+// HandleCancelJob stops a running job by killing its container.
+func (h *ExecutionHandler) HandleCancelJob(w http.ResponseWriter, r *http.Request) {
+	jobID := r.PathValue("id")
+	if jobID == "" {
+		http.Error(w, "missing job id", http.StatusBadRequest)
+		return
+	}
+
+	containerName := fmt.Sprintf("cleargate-job-%s", jobID)
+	err := h.runtime.Stop(context.Background(), runtime.ContainerID(containerName))
+	if err != nil {
+		h.logger.LogStderr(jobID, []byte("Job cancelled by user.\n"))
+		http.Error(w, fmt.Sprintf("failed to stop job: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	h.logger.LogStatus(jobID, "complete", 137) // 137 is SIGKILL
+	h.registry.Complete(jobID, 137)
+	w.WriteHeader(http.StatusOK)
+}
+
 // HandleListJobs returns active/recent jobs, optionally filtered by tool_id.
 func (h *ExecutionHandler) HandleListJobs(w http.ResponseWriter, r *http.Request) {
 	toolID := r.URL.Query().Get("tool_id")

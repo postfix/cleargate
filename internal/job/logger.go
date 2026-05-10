@@ -70,7 +70,7 @@ func (l *Logger) LogStderr(jobID string, data []byte) {
 }
 
 func (l *Logger) LogStatus(jobID string, status string, exitCode int) {
-	l.broadcast(jobID, LogMessage{Type: "status", Data: []byte(status)})
+	l.broadcast(jobID, LogMessage{Type: "status", Data: []byte(fmt.Sprintf("%s:%d", status, exitCode))})
 }
 
 // CaptureLogs reads from the LogEvent channel and writes to files (legacy/fallback).

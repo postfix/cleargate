@@ -9,6 +9,7 @@ metadata:
 runtime:
   executable: nmap
   argv0: nmap
+  timeoutSeconds: 30
 flags:
   - id: target
     type: string
@@ -16,10 +17,24 @@ flags:
     ui:
       label: "Target Host(s)"
       category: "Target Specification"
+  - id: unprivileged
+    type: boolean
+    flag: "--unprivileged"
+    default: true
+    ui:
+      label: "Run Unprivileged"
+      category: "Scan Techniques"
+  - id: skipPing
+    type: boolean
+    flag: "-Pn"
+    default: true
+    ui:
+      label: "Skip Ping (Treat all hosts as online)"
+      category: "Scan Techniques"
   - id: synScan
     type: boolean
     flag: "-sS"
-    default: true
+    default: false
     ui:
       label: "TCP SYN Scan"
       category: "Scan Techniques"

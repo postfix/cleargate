@@ -29,7 +29,8 @@ type ContainerRuntime interface {
 	PullImage(ctx context.Context, image string) error
 	Create(ctx context.Context, req CreateContainerRequest) (ContainerID, error)
 	Start(ctx context.Context, id ContainerID) error
-	Wait(ctx context.Context, id ContainerID) error
+	Wait(ctx context.Context, id ContainerID) (int, error)
+	Stop(ctx context.Context, id ContainerID) error
 	Logs(ctx context.Context, id ContainerID) (<-chan LogEvent, error)
 	// Add other methods (Inspect, Remove, CopyTo, CopyFrom) as needed
 }

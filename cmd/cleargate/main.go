@@ -105,6 +105,7 @@ runtime:
 	mux.HandleFunc("POST /api/execute", executeHandler.HandleExecute)
 	mux.HandleFunc("GET /api/jobs/{id}/events", executeHandler.HandleEvents)
 	mux.HandleFunc("GET /api/jobs/{id}/metadata", executeHandler.HandleJobMetadata)
+	mux.HandleFunc("DELETE /api/jobs/{id}", executeHandler.HandleCancelJob)
 	mux.HandleFunc("GET /api/jobs", executeHandler.HandleListJobs)
 	mux.HandleFunc("GET /api/catalog", catalogHandler.HandleListCatalog)
 	
@@ -152,6 +153,7 @@ func (d *DummyRuntime) Create(ctx context.Context, req runtime.CreateContainerRe
 	return runtime.ContainerID("dummy-id"), nil
 }
 func (d *DummyRuntime) Start(ctx context.Context, id runtime.ContainerID) error { return nil }
+func (d *DummyRuntime) Stop(ctx context.Context, id runtime.ContainerID) error { return nil }
 func (d *DummyRuntime) Wait(ctx context.Context, id runtime.ContainerID) (int, error) { return 0, nil }
 func (d *DummyRuntime) Logs(ctx context.Context, id runtime.ContainerID) (<-chan runtime.LogEvent, error) {
 	ch := make(chan runtime.LogEvent)

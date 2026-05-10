@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Play, Save } from 'lucide-react';
+import { ChevronLeft, Play, Save, StopCircle } from 'lucide-react';
 import { DynamicForm } from '../components/DynamicForm';
 import { PresetBar } from '../components/PresetBar';
 import { LogStream } from '../components/LogStream';
@@ -169,6 +169,20 @@ export default function ExecutionPage() {
     }
   };
 
+  const handleStop = async () => {
+    if (!activeJobId) return;
+    try {
+      const res = await fetch(`/api/jobs/${activeJobId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to stop job');
+      setJobStatus('failed'); // API returns 137 exit code, logstream should catch it, but update locally just in case
+    } catch (err: any) {
+      console.error('Failed to stop job:', err);
+      alert(`Error stopping job: ${err.message}`);
+    }
+  };
+
   if (loading) return <div className="page-container">Loading...</div>;
   if (error || !record) return <div className="page-container error-badge">{error || 'Not found'}</div>;
 
@@ -217,6 +231,16 @@ export default function ExecutionPage() {
               <Play size={16} style={{marginRight: '8px', verticalAlign: 'middle'}}/>
               Run Tool
             </button>
+            {jobStatus === 'running' && (
+              <button 
+                className="btn-primary" 
+                style={{backgroundColor: '#e74c3c', borderColor: '#c0392b'}}
+                onClick={handleStop}
+              >
+                <StopCircle size={16} style={{marginRight: '8px', verticalAlign: 'middle'}}/>
+                Stop
+              </button>
+            )}
             <button className="btn-secondary" onClick={handleSavePreset}>
               <Save size={16} style={{marginRight: '8px', verticalAlign: 'middle'}}/>
               Save as Preset

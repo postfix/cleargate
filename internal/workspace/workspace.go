@@ -13,8 +13,9 @@ type Config struct {
 
 // DefaultConfig provides a default configuration for workspaces.
 func DefaultConfig() Config {
+	home, _ := os.UserHomeDir()
 	return Config{
-		BasePath: "/tmp/cleargate/jobs", // Defaulting to tmp for MVP local development
+		BasePath: filepath.Join(home, ".cleargate", "jobs"),
 	}
 }
 

@@ -53,6 +53,9 @@ func (p *PodmanRuntime) Create(ctx context.Context, req CreateContainerRequest) 
 
 	// Hardened security profile by default
 	s.CapDrop = []string{"ALL"}
+	if len(req.CapAdd) > 0 {
+		s.CapAdd = req.CapAdd
+	}
 	
 	// Need pointers for some boolean options
 	trueVal := true
@@ -84,10 +87,10 @@ func (p *PodmanRuntime) Start(ctx context.Context, id ContainerID) error {
 	return containers.Start(p.connCtx, string(id), nil)
 }
 
-func (p *PodmanRuntime) Wait(ctx context.Context, id ContainerID) error {
+func (p *PodmanRuntime) Wait(ctx context.Context, id ContainerID) (int, error) {
 	// Wait logic. It returns an exit code.
-	_, err := containers.Wait(p.connCtx, string(id), nil)
-	return err
+	exitCode, err := containers.Wait(p.connCtx, string(id), nil)
+	return int(exitCode), err
 }
 
 func (p *PodmanRuntime) Logs(ctx context.Context, id ContainerID) (<-chan LogEvent, error) {
@@ -137,4 +140,8 @@ func (p *PodmanRuntime) Logs(ctx context.Context, id ContainerID) (<-chan LogEve
 	}()
 
 	return ch, nil
+}
+
+func (p *PodmanRuntime) Stop(ctx context.Context, id ContainerID) error {
+	return containers.Kill(p.connCtx, string(id), nil)
 }
