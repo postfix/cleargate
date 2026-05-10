@@ -22,12 +22,12 @@
 ### Tool Administration
 - [ ] **TOOL-01**: Maintainer can run discovery on a binary or container to extract help/man/docs.
 - [ ] **TOOL-02**: System uses CloudWeGo Eino LLM pipeline to draft ToolSpecs from raw evidence.
-- [ ] **TOOL-03**: Administrator can approve and version ToolSpecs.
-- [ ] **TOOL-04**: ToolSpec schemas are strongly validated (JSON schema, unknown flag rejection).
+- [x] **TOOL-03**: Administrator can approve and version ToolSpecs.
+- [x] **TOOL-04**: ToolSpec schemas are strongly validated (JSON schema, unknown flag rejection).
 
 ### Presets and Audit
-- [ ] **AUDIT-01**: System logs who ran what, when, with which inputs, ToolSpec version, and sandbox policy.
-- [ ] **PRESET-01**: Users and teams can save successful job runs as reusable presets.
+- [x] **AUDIT-01**: System logs who ran what, when, with which inputs, ToolSpec version, and sandbox policy.
+- [x] **PRESET-01**: Users and teams can save successful job runs as reusable presets.
 
 ## v1.1 Requirements
 
@@ -54,24 +54,24 @@
 
 | ID | Description | Assigned Phase | Status |
 |---|---|---|---|
-| EXEC-01 | Sandboxed execution | Phase 7 | Done |
-| EXEC-02 | Capture output/metadata | Phase 10 | Pending |
-| EXEC-03 | Stream status/logs | Phase 7 | Done |
-| EXEC-04 | Compile safe argv | Phase 7 | Done |
-| EXEC-05 | Prevent arbitrary execution | Phase 7 | Done |
-| EXEC-06 | Real Podman integration | Phase 6 | Done |
-| EXEC-07 | Security Profile | Phase 6 | Done |
-| FILE-01 | Upload input files | Phase 10 | Pending |
-| FILE-02 | Download artifacts | Phase 10 | Partial |
-| FILE-03 | Enforce file limits | Phase 10 | Pending |
-| UI-01 | Dynamic forms | Phase 7 | Done |
-| UI-02 | View catalog | Phase 7 | Done |
-| UI-03 | Apply presets | Phase 7 | Done |
-| UI-04 | Remove UI Mocks | Phase 6 | Done |
+| EXEC-01 | Sandboxed execution | Phase 12 | Pending |
+| EXEC-02 | Capture output/metadata | Phase 10 | Done |
+| EXEC-03 | Stream status/logs | Phase 12 | Pending |
+| EXEC-04 | Compile safe argv | Phase 12 | Pending |
+| EXEC-05 | Prevent arbitrary execution | Phase 12 | Pending |
+| EXEC-06 | Real Podman integration | Phase 11 | Pending |
+| EXEC-07 | Security Profile | Phase 11 | Pending |
+| FILE-01 | Upload input files | Phase 10 | Done |
+| FILE-02 | Download artifacts | Phase 10 | Done |
+| FILE-03 | Enforce file limits | Phase 10 | Done |
+| UI-01 | Dynamic forms | Phase 12 | Pending |
+| UI-02 | View catalog | Phase 12 | Pending |
+| UI-03 | Apply presets | Phase 12 | Pending |
+| UI-04 | Remove UI Mocks | Phase 11 | Pending |
 | TOOL-01 | Discover help/docs | Deferred | — |
 | TOOL-02 | Eino LLM drafting | Deferred | — |
-| TOOL-03 | Approve/version specs | Phase 9 | Pending |
-| TOOL-04 | Validate schemas | Phase 9 | Pending |
-| TOOL-05 | Database Seeder | Phase 6 | Done |
-| AUDIT-01 | Audit logging | Phase 8 | Pending |
-| PRESET-01 | Save presets | Phase 8 | Partial |
+| TOOL-03 | Approve/version specs | Phase 9 | Done |
+| TOOL-04 | Validate schemas | Phase 9 | Done |
+| TOOL-05 | Database Seeder | Phase 11 | Pending |
+| AUDIT-01 | Audit logging | Phase 8 | Done |
+| PRESET-01 | Save presets | Phase 8 | Done |

@@ -51,6 +51,16 @@
 5. Path traversal is prevented (already implemented, needs test coverage).
 6. Exit code, stdout/stderr sizes, and output file list are captured as job metadata (EXEC-02).
 
+### Phase 11: Gap Closure - Validate Rootless Execution & ToolSpec Seeding
+**Goal:** Formally verify the requirements originally assigned to Phase 06 by writing the missing VERIFICATION.md tests.
+**Requirements:** EXEC-06, EXEC-07, UI-04, TOOL-05
+**Gap Closure:** Closes gaps from audit
+
+### Phase 12: Gap Closure - Validate Core Execution and API Wiring
+**Goal:** Formally verify the requirements originally assigned to Phase 07 by writing the missing VERIFICATION.md tests.
+**Requirements:** EXEC-01, EXEC-03, EXEC-04, EXEC-05, UI-01, UI-02, UI-03
+**Gap Closure:** Closes gaps from audit
+
 ## Traceability Map
 - EXEC-01: Phase 7
 - EXEC-02: Phase 10
