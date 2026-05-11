@@ -47,6 +47,27 @@ flags:
     ui:
       label: "Probe open ports to determine service/version info"
       category: "Service/Version Detection"
+  - id: minRate
+    type: string
+    flag: "--min-rate"
+    default: "100"
+    ui:
+      label: "Minimum packet rate"
+      category: "Performance"
+  - id: maxRetries
+    type: string
+    flag: "--max-retries"
+    default: "2"
+    ui:
+      label: "Max probe retries"
+      category: "Performance"
+  - id: topPorts
+    type: string
+    flag: "--top-ports"
+    default: "100"
+    ui:
+      label: "Top Ports (limits ports to prevent Mac VM network crashes)"
+      category: "Target Specification"
 presets:
   - id: quick
     name: Quick Scan
