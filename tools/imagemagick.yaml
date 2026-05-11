@@ -1,0 +1,43 @@
+apiVersion: cleargate.dev/v1alpha1
+kind: ToolSpec
+metadata:
+  name: imagemagick
+  displayName: "ImageMagick Converter"
+  version: "7.1"
+  description: "Convert and manipulate images using ImageMagick."
+  owner: admin
+runtime:
+  executable: magick
+  omitExecutable: true
+  containerImage: "docker.io/dpokidov/imagemagick:latest"
+  timeoutSeconds: 60
+inputs:
+  - id: inputImage
+    type: file
+    required: true
+outputs:
+  - id: outputImage
+    type: file
+    path: "output.png"
+    downloadable: true
+flags:
+  - id: resize
+    type: string
+    flag: "-resize"
+    default: "50%"
+    ui:
+      label: "Resize (e.g., 50%, 800x600)"
+      category: "Options"
+  - id: blur
+    type: string
+    flag: "-blur"
+    ui:
+      label: "Blur (e.g., 0x8)"
+      category: "Options"
+positionals:
+  - id: p1
+    source: inputImage
+    order: 1
+  - id: p2
+    source: outputImage
+    order: 99

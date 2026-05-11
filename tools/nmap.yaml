@@ -8,6 +8,8 @@ metadata:
   owner: admin
 runtime:
   executable: nmap
+  omitExecutable: true
+  containerImage: "docker.io/instrumentisto/nmap:latest"
   argv0: nmap
   timeoutSeconds: 30
 flags:

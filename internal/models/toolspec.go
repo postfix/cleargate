@@ -31,6 +31,7 @@ type Metadata struct {
 type Runtime struct {
 	Executable       string            `yaml:"executable" validate:"required"`
 	Argv0            string            `yaml:"argv0"`
+	OmitExecutable   bool              `yaml:"omitExecutable,omitempty"`
 	ContainerImage   string            `yaml:"containerImage,omitempty"`
 	WorkingDirectory string            `yaml:"workingDirectory,omitempty"`
 	TimeoutSeconds   int               `yaml:"timeoutSeconds,omitempty" validate:"min=1"`
