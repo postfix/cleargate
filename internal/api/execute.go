@@ -95,16 +95,8 @@ func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request)
 
 	var cmdArgs []string
 
-	// Basic execution assembly mapping
-	if spec.Runtime.Executable == "nmap" {
-		// Use a known nmap image if none specified
-		if spec.Runtime.ContainerImage == "" {
-			spec.Runtime.ContainerImage = "docker.io/instrumentisto/nmap:latest"
-		}
-		// For nmap image where entrypoint is already nmap, we omit nmap from command.
-		// Wait, if we aren't sure about entrypoint, we pass "nmap" then args. If it's alpine, we do "nmap args".
-		// We will assume entrypoint is empty or we use full command. Let's just pass the args.
-	} else {
+	// Check if we should append the executable to cmdArgs
+	if !spec.Runtime.OmitExecutable {
 		cmdArgs = append(cmdArgs, spec.Runtime.Executable)
 	}
 
@@ -234,6 +226,9 @@ func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request)
 				exitCode = -1
 				h.logger.LogStderr(req.JobID, []byte(fmt.Sprintf("wait error (possibly timeout): %v", err)))
 			}
+			// Write metadata.json to workspace BEFORE emitting complete event
+			h.writeJobMetadata(req.JobID, exitCode, stdoutBytes, stderrBytes)
+			
 			h.registry.Complete(req.JobID, exitCode)
 			h.logger.LogStatus(req.JobID, "complete", exitCode)
 			
@@ -243,9 +238,6 @@ func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request)
 				ExitCode:  exitCode,
 				CreatedAt: time.Now(),
 			})
-
-			// Write metadata.json to workspace
-			h.writeJobMetadata(req.JobID, exitCode, stdoutBytes, stderrBytes)
 		}()
 	} else {
 		h.logger.LogStderr(req.JobID, []byte(fmt.Sprintf("failed to attach logs: %v", err)))
