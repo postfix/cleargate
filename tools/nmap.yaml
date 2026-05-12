@@ -50,23 +50,23 @@ flags:
   - id: minRate
     type: string
     flag: "--min-rate"
-    default: "100"
+    default: "3000"
     ui:
       label: "Minimum packet rate"
       category: "Performance"
-  - id: maxRetries
-    type: string
-    flag: "--max-retries"
-    default: "2"
+  - id: defeatRstRatelimit
+    type: boolean
+    flag: "--defeat-rst-ratelimit"
+    default: true
     ui:
-      label: "Max probe retries"
+      label: "Defeat RST ratelimit"
       category: "Performance"
-  - id: topPorts
-    type: string
-    flag: "--top-ports"
-    default: "100"
+  - id: fastScan
+    type: boolean
+    flag: "-F"
+    default: true
     ui:
-      label: "Top Ports (limits ports to prevent Mac VM network crashes)"
+      label: "Fast Scan (Top 100 ports)"
       category: "Target Specification"
 presets:
   - id: quick
