@@ -1,6 +1,6 @@
 # Phase 09: ToolSpec Validation and Timeout Enforcement - Context
 
-**Gathered:** 2026-05-09
+**Gathered:** 2026-05-12
 **Status:** Ready for planning
 
 <domain>
@@ -12,20 +12,21 @@ Validate ToolSpec YAML against the schema before approval, reject unknown flags 
 <decisions>
 ## Implementation Decisions
 
-### Validation Engine
-- **D-01:** Use `go-playground/validator/v10` for struct validation. It provides robust, standard validation rules via struct tags, making the ToolSpec model declarative and easy to validate.
+### Validation Engine & Rules
+- **D-01:** Use `go-playground/validator/v10` for struct validation.
+- **D-02:** Stick to standard struct tags (`required`, `min`, `max`, etc.) to keep validation simple and declarative, relying on the admin's domain knowledge rather than complex regex checks for flag formats.
 
-### Timeout Enforcement
-- **D-02:** Use Go's `context.WithTimeout` passed directly to the Podman API calls (`containers.Wait` or `containers.Run`). This is the cleanest and most idiomatic way to enforce process timeouts in Go.
+### Timeout Enforcement Behavior
+- **D-03:** Implement graceful termination. When the `timeoutSeconds` is reached, send `SIGTERM` to the container, wait 5 seconds to allow for partial output/logs to flush, and then issue a hard `SIGKILL`.
 
 ### Unknown Flag Rejection
-- **D-03:** Explicit validation in the `ExecutionHandler`. Before constructing the `argv[]` array, explicitly check every provided input key against the allowed `ToolSpec.Flags` and `ToolSpec.Inputs`. If any key is not defined, return a 400 error.
+- **D-04:** Fail fast with an HTTP 400 response. Before constructing the `argv[]` array, explicitly check every provided input key against the allowed `ToolSpec.Flags` and `ToolSpec.Inputs`. If any unknown key is submitted, reject the entire execution immediately to ensure deterministic execution and prevent wasted compute.
+
+### Validation Feedback UI
+- **D-05:** Provide inline form validation errors in the React frontend. The backend should return a structured JSON response detailing exactly which flags failed validation. The UI will use this payload to highlight the specific offending fields in red, rather than relying on a generic global error banner.
 
 ### ToolSpec Versioning
-- **D-04:** Append-only history. Approving a new version creates a new database row. The old version remains queryable. (This was explicitly required by the success criteria).
-
-### the agent's Discretion
-- Validation error message formatting.
+- **D-06:** Append-only history. Approving a new version creates a new database row. The old version remains queryable.
 </decisions>
 
 <canonical_refs>
@@ -44,22 +45,17 @@ No other external specs referenced.
 
 ### Reusable Assets
 - `internal/models/toolspec.go` — Contains the structs to be validated.
-- `internal/api/execute.go` — Contains the `ExecutionHandler` where unknown flags should be rejected.
-- `internal/job/docker_runner.go` or `podman_runner.go` — Contains the container run logic where timeouts need to be enforced.
+- `internal/api/execute.go` — Contains the `ExecutionHandler` where unknown flags should be rejected and validation responses generated.
+- `internal/job/docker_runner.go` or `podman_runner.go` — Contains the container run logic where graceful timeouts (`SIGTERM` -> `SIGKILL`) need to be enforced.
 
 </code_context>
 
 <specifics>
 ## Specific Ideas
 - The timeout should enforce `runtime.timeoutSeconds` from the ToolSpec.
-
 </specifics>
 
 <deferred>
 ## Deferred Ideas
 None.
 </deferred>
-
----
-*Phase: 09-toolspec-validation-and-timeout-enforcement*
-*Context gathered: 2026-05-09 (Auto-chained)*
