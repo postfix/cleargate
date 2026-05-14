@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Play, Save, StopCircle } from 'lucide-react';
+import { ChevronLeft, Play, Save, StopCircle, Download } from 'lucide-react';
 import { DynamicForm } from '../components/DynamicForm';
 import { PresetBar } from '../components/PresetBar';
 import { LogStream } from '../components/LogStream';
@@ -15,11 +15,13 @@ export default function ExecutionPage() {
   const [formState, setFormState] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   
   // Job execution state
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<string>('idle');
   const [savedPresets, setSavedPresets] = useState<Preset[]>([]);
+  const [outputFiles, setOutputFiles] = useState<string[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -68,6 +70,21 @@ export default function ExecutionPage() {
       .catch(() => { /* ignore */ });
   }, [id]);
 
+  useEffect(() => {
+    if ((jobStatus === 'succeeded' || jobStatus === 'failed') && activeJobId) {
+      fetch(`/api/jobs/${activeJobId}/metadata`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.output_files) {
+            setOutputFiles(data.output_files);
+          }
+        })
+        .catch(console.error);
+    } else if (jobStatus === 'running') {
+      setOutputFiles([]);
+    }
+  }, [jobStatus, activeJobId]);
+
   const handleRun = async () => {
     if (!id) return;
     try {
@@ -97,7 +114,7 @@ export default function ExecutionPage() {
           formData.append(key, file);
         }
         
-        const uploadRes = await fetch(`/api/upload?job_id=${jobId}`, {
+        const uploadRes = await fetch(`/api/upload?job_id=${jobId}&tool_id=${id}`, {
           method: 'POST',
           body: formData,
         });
@@ -121,7 +138,23 @@ export default function ExecutionPage() {
         }),
       });
       
-      if (!response.ok) throw new Error('Failed to start job');
+      if (!response.ok) {
+        if (response.status === 400) {
+          try {
+            const errData = await response.json();
+            if (errData.errors) {
+              setFormErrors(errData.errors);
+              setJobStatus('idle'); // Or failed, but idle lets them fix and retry easily
+              return;
+            }
+          } catch (e) {
+            // ignore JSON parse error, fallback to generic error
+          }
+        }
+        throw new Error('Failed to start job');
+      }
+      
+      setFormErrors({});
     } catch (err: any) {
       setJobStatus('failed');
       alert(`Error starting job: ${err.message}`);
@@ -213,6 +246,7 @@ export default function ExecutionPage() {
               spec={toolSpec} 
               value={formState} 
               onChange={setFormState} 
+              errors={formErrors}
             />
           ) : (
             <div className="form-placeholder">
@@ -257,6 +291,26 @@ export default function ExecutionPage() {
         </div>
         {activeJobId && <span className="code">Job ID: {activeJobId}</span>}
       </div>
+
+      {/* Output Files Download Section */}
+      {outputFiles.length > 0 && (
+        <div className="downloads-section" style={{ padding: '20px', backgroundColor: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+          <h4 className="label" style={{ marginBottom: '10px' }}>Generated Artifacts</h4>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            {outputFiles.map(file => (
+              <a 
+                key={file} 
+                href={`/api/download?job_id=${activeJobId}&filename=${encodeURIComponent(file)}`}
+                className="btn-secondary"
+                download={file}
+              >
+                <Download size={16} style={{marginRight: '8px', verticalAlign: 'middle'}}/>
+                Download {file}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Log Stream */}
       {activeJobId && (

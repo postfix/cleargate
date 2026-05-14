@@ -88,7 +88,13 @@ func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request)
 
 	for key := range req.Values {
 		if !allowedKeys[key] {
-			http.Error(w, fmt.Sprintf("Unknown flag/input: %s", key), http.StatusBadRequest)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"errors": map[string]string{
+					key: "Unknown flag",
+				},
+			})
 			return
 		}
 	}
@@ -168,12 +174,18 @@ func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request)
 		cmdArgs = append([]string{"echo"}, cmdArgs...)
 	}
 
+	timeout := spec.Runtime.TimeoutSeconds
+	if timeout <= 0 {
+		timeout = 300 // default 5 minutes
+	}
+
 	containerReq := runtime.CreateContainerRequest{
-		Image:        spec.Runtime.ContainerImage,
-		Name:         fmt.Sprintf("cleargate-job-%s", req.JobID),
-		Command:      cmdArgs,
-		Remove:       true,
-		WorkspaceDir: workspacePath,
+		Image:          spec.Runtime.ContainerImage,
+		Name:           fmt.Sprintf("cleargate-job-%s", req.JobID),
+		Command:        cmdArgs,
+		Remove:         true,
+		WorkspaceDir:   workspacePath,
+		TimeoutSeconds: timeout,
 	}
 
 	if spec.Runtime.Executable == "nmap" {
@@ -199,11 +211,17 @@ func (h *ExecutionHandler) HandleExecute(w http.ResponseWriter, r *http.Request)
 	// Register job in the registry
 	h.registry.Register(req.JobID, req.ToolID)
 
-	timeout := spec.Runtime.TimeoutSeconds
-	if timeout <= 0 {
-		timeout = 300 // default 5 minutes
-	}
-	execCtx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+	execCtx, cancel := context.WithCancel(context.Background())
+
+	go func() {
+		select {
+		case <-time.After(time.Duration(timeout) * time.Second):
+			h.runtime.GracefulStop(context.Background(), containerID)
+			cancel() // cancel the execCtx to unblock Logs wait if needed
+		case <-execCtx.Done():
+			// Job completed or was cancelled normally before timeout
+		}
+	}()
 
 	// Attach logs in background
 	logChan, err := h.runtime.Logs(execCtx, containerID)

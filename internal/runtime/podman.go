@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"os"
 	gruntime "runtime"
+	"time"
+
+	"github.com/opencontainers/runtime-spec/specs-go"
 	"go.podman.io/podman/v6/pkg/bindings"
 	"go.podman.io/podman/v6/pkg/bindings/containers"
 	"go.podman.io/podman/v6/pkg/bindings/images"
 	"go.podman.io/podman/v6/pkg/specgen"
-	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
 type PodmanRuntime struct {
@@ -56,7 +58,7 @@ func (p *PodmanRuntime) Create(ctx context.Context, req CreateContainerRequest) 
 	if len(req.CapAdd) > 0 {
 		s.CapAdd = req.CapAdd
 	}
-	
+
 	// Need pointers for some boolean options
 	trueVal := true
 	s.ReadOnlyFilesystem = &trueVal
@@ -109,7 +111,7 @@ func (p *PodmanRuntime) Logs(ctx context.Context, id ContainerID) (<-chan LogEve
 	// Fetch logs in background and close the wrapper channel when done
 	go func() {
 		defer close(ch)
-		
+
 		// Run containers.Logs in its own goroutine to feed stdoutChan/stderrChan
 		go func() {
 			err := containers.Logs(p.connCtx, string(id), opts, stdoutChan, stderrChan)
@@ -137,7 +139,7 @@ func (p *PodmanRuntime) Logs(ctx context.Context, id ContainerID) (<-chan LogEve
 			case <-ctx.Done():
 				return
 			}
-			
+
 			if stdoutChan == nil && stderrChan == nil {
 				break
 			}
@@ -149,4 +151,18 @@ func (p *PodmanRuntime) Logs(ctx context.Context, id ContainerID) (<-chan LogEve
 
 func (p *PodmanRuntime) Stop(ctx context.Context, id ContainerID) error {
 	return containers.Kill(p.connCtx, string(id), nil)
+}
+
+func (p *PodmanRuntime) GracefulStop(ctx context.Context, id ContainerID) error {
+	sigTerm := "SIGTERM"
+	err := containers.Kill(p.connCtx, string(id), new(containers.KillOptions).WithSignal(sigTerm))
+	if err != nil {
+		return err
+	}
+
+	time.Sleep(5 * time.Second)
+
+	sigKill := "SIGKILL"
+	_ = containers.Kill(p.connCtx, string(id), new(containers.KillOptions).WithSignal(sigKill))
+	return nil
 }

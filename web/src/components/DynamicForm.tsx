@@ -5,9 +5,10 @@ interface DynamicFormProps {
   spec: ToolSpec;
   value: Record<string, any>;
   onChange: (value: Record<string, any>) => void;
+  errors?: Record<string, string>;
 }
 
-export function DynamicForm({ spec, value, onChange }: DynamicFormProps) {
+export function DynamicForm({ spec, value, onChange, errors = {} }: DynamicFormProps) {
   
   const updateField = (id: string, val: any) => {
     onChange({ ...value, [id]: val });
@@ -48,6 +49,7 @@ export function DynamicForm({ spec, value, onChange }: DynamicFormProps) {
             placeholder={`Enter ${flag.ui?.label || flag.id}`}
           />
         )}
+        {errors[flag.id] && <div className="field-error" style={{color: '#e74c3c', fontSize: '12px', marginTop: '4px'}}>{errors[flag.id]}</div>}
       </div>
     );
   };
@@ -88,6 +90,7 @@ export function DynamicForm({ spec, value, onChange }: DynamicFormProps) {
             title={selectedFile ? "Click to change file" : ""}
           />
         </div>
+        {errors[input.id] && <div className="field-error" style={{color: '#e74c3c', fontSize: '12px', marginTop: '4px'}}>{errors[input.id]}</div>}
       </div>
     );
   };

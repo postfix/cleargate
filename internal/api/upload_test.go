@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/postfix/cleargate/internal/models"
+	"github.com/postfix/cleargate/internal/repository"
 	"github.com/postfix/cleargate/internal/workspace"
 )
 
@@ -18,6 +20,24 @@ func TestHandleUpload(t *testing.T) {
 	jobID := "job_123"
 	wm.InitializeWorkspace(jobID)
 
+	repo, err := repository.NewToolSpecRepository("?access_mode=READ_WRITE")
+	if err != nil {
+		t.Fatalf("Failed to create repo: %v", err)
+	}
+	defer repo.Close()
+
+	// Seed a test ToolSpec so GetByID doesn't fail
+	err = repo.SaveDraft(&models.ToolSpec{
+		Metadata: models.Metadata{Name: "testtool", Version: "1.0"},
+		Inputs: []models.Input{
+			{ID: "file"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("Failed to seed toolspec: %v", err)
+	}
+	repo.Approve("testtool")
+
 	// Create a multipart body
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
@@ -25,11 +45,11 @@ func TestHandleUpload(t *testing.T) {
 	part.Write([]byte("hello world"))
 	writer.Close()
 
-	req := httptest.NewRequest(http.MethodPost, "/upload?job_id="+jobID, body)
+	req := httptest.NewRequest(http.MethodPost, "/upload?job_id="+jobID+"&tool_id=testtool", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	rr := httptest.NewRecorder()
-	handler := NewUploadHandler(wm)
+	handler := NewUploadHandler(wm, repo, nil)
 	handler.HandleUpload(rr, req)
 
 	if status := rr.Code; status != http.StatusCreated {

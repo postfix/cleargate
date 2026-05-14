@@ -14,8 +14,9 @@ type CreateContainerRequest struct {
 	Command []string
 	Remove  bool
 	
-	WorkspaceDir string
-	CapAdd       []string
+	WorkspaceDir   string
+	CapAdd         []string
+	TimeoutSeconds int
 }
 
 // LogEvent represents a single line or chunk of log output.
@@ -31,6 +32,7 @@ type ContainerRuntime interface {
 	Start(ctx context.Context, id ContainerID) error
 	Wait(ctx context.Context, id ContainerID) (int, error)
 	Stop(ctx context.Context, id ContainerID) error
+	GracefulStop(ctx context.Context, id ContainerID) error
 	Logs(ctx context.Context, id ContainerID) (<-chan LogEvent, error)
 	// Add other methods (Inspect, Remove, CopyTo, CopyFrom) as needed
 }
