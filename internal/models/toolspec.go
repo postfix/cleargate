@@ -34,7 +34,7 @@ type Runtime struct {
 	OmitExecutable   bool              `yaml:"omitExecutable,omitempty"`
 	ContainerImage   string            `yaml:"containerImage,omitempty"`
 	WorkingDirectory string            `yaml:"workingDirectory,omitempty"`
-	TimeoutSeconds   int               `yaml:"timeoutSeconds,omitempty" validate:"min=1"`
+	TimeoutSeconds   int               `yaml:"timeoutSeconds" validate:"required,min=1"`
 	MaxMemoryMB      int               `yaml:"maxMemoryMB,omitempty"`
 	MaxCPUPercent    int               `yaml:"maxCPUPercent,omitempty"`
 	MaxStdoutBytes   int               `yaml:"maxStdoutBytes,omitempty"`

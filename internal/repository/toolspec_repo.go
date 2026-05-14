@@ -75,10 +75,7 @@ func (r *ToolSpecRepository) SaveDraft(spec *models.ToolSpec) error {
 	query := `
 	INSERT INTO toolspecs (id, name, version, status, content, created_at)
 	VALUES (?, ?, ?, 'draft', ?, ?)
-	ON CONFLICT (id, version) DO UPDATE SET
-		status = 'draft',
-		content = EXCLUDED.content,
-		created_at = EXCLUDED.created_at
+	ON CONFLICT (id, version) DO NOTHING
 	`
 
 	_, err = r.db.Exec(query, id, spec.Metadata.Name, spec.Metadata.Version, string(contentBytes), time.Now())

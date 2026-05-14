@@ -39,7 +39,18 @@ func (h *AdminHandler) HandleCreateDraft(w http.ResponseWriter, r *http.Request)
 
 	v := validator.New()
 	if err := v.Struct(spec); err != nil {
-		http.Error(w, "validation failed: "+err.Error(), http.StatusBadRequest)
+		errors := make(map[string]string)
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			for _, fieldErr := range validationErrors {
+				errors[fieldErr.StructNamespace()] = fieldErr.ActualTag()
+			}
+		} else {
+			errors["general"] = err.Error()
+		}
+		
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]interface{}{"errors": errors})
 		return
 	}
 

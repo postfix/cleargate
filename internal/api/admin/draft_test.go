@@ -20,12 +20,16 @@ func TestAdminHandlers(t *testing.T) {
 
 	assistant := llm.NewMockAssistant(`
 apiVersion: cleargate.dev/v1
+kind: ToolSpec
 metadata:
   name: testtool
   version: "1.0.0"
+runtime:
+  executable: /bin/test
+  timeoutSeconds: 30
 `)
 
-	handler := NewAdminHandler(assistant, repo)
+	handler := NewAdminHandler(assistant, repo, nil)
 
 	// 1. Create Draft
 	body := []byte(`{"help_text": "test"}`)
@@ -52,12 +56,12 @@ metadata:
 	if len(drafts) != 1 {
 		t.Fatalf("Expected 1 draft, got %d", len(drafts))
 	}
-	if drafts[0].ID != "testtool-1.0.0" {
-		t.Errorf("Expected draft ID 'testtool-1.0.0', got %s", drafts[0].ID)
+	if drafts[0].ID != "testtool" {
+		t.Errorf("Expected draft ID 'testtool', got %s", drafts[0].ID)
 	}
 
 	// 3. Approve
-	req = httptest.NewRequest(http.MethodPost, "/api/admin/tools/testtool-1.0.0/approve", nil)
+	req = httptest.NewRequest(http.MethodPost, "/api/admin/tools/testtool/approve", nil)
 	rr = httptest.NewRecorder()
 	handler.HandleApproveDraft(rr, req)
 
