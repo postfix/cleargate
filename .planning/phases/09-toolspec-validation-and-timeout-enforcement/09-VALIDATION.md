@@ -38,10 +38,10 @@ created: 2026-05-13
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 09-01-01 | 01 | 1 | TOOL-04 | unit | `go test ./internal/models -run TestToolSpecValidation` | ❌ W0 | ⬜ pending |
-| 09-01-02 | 01 | 1 | TOOL-04 | unit | `go test ./internal/api -run TestDraftValidation` | ❌ W0 | ⬜ pending |
-| 09-02-01 | 02 | 2 | TOOL-04 | unit | `go test ./internal/api -run TestUnknownFlagRejection` | ❌ W0 | ⬜ pending |
-| 09-02-02 | 02 | 2 | TOOL-03 | unit | `go test ./internal/job -run TestGracefulTimeout` | ❌ W0 | ⬜ pending |
+| 09-01-01 | 01 | 1 | TOOL-04 | unit | `go test ./internal/models -run TestToolSpecValidation` | ✅ | ✅ green |
+| 09-01-02 | 01 | 1 | TOOL-04 | unit | `go test ./internal/api/admin -run TestDraftValidation` | ✅ | ✅ green |
+| 09-02-01 | 02 | 2 | TOOL-04 | unit | `go test ./internal/api -run TestUnknownFlagRejection` | ✅ | ✅ green |
+| 09-02-02 | 02 | 2 | TOOL-03 | unit | `go test ./internal/api -run TestGracefulTimeout` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -49,10 +49,10 @@ created: 2026-05-13
 
 ## Wave 0 Requirements
 
-- [ ] `internal/models/toolspec_test.go` — stubs for struct validation testing
-- [ ] `internal/api/drafts_test.go` — stubs for validation API testing
-- [ ] `internal/api/execute_test.go` — stubs for unknown flag rejection
-- [ ] `internal/job/timeout_test.go` — stubs for timeout behavior
+- [x] `internal/models/toolspec_validation_test.go` — stubs for struct validation testing
+- [x] `internal/api/admin/draft_validation_test.go` — stubs for validation API testing
+- [x] `internal/api/execute_validation_test.go` — stubs for unknown flag rejection
+- [x] `internal/api/execute_timeout_test.go` — stubs for timeout behavior
 
 *If none: "Existing infrastructure covers all phase requirements."*
 
@@ -76,3 +76,12 @@ created: 2026-05-13
 - [x] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** approved 2026-05-13
+
+---
+
+## Validation Audit 2026-05-15
+| Metric | Count |
+|--------|-------|
+| Gaps found | 4 |
+| Resolved | 4 |
+| Escalated | 0 |
