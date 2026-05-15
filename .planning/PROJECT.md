@@ -8,15 +8,9 @@ ClearGate is a secure CLI application gateway that converts approved command-lin
 
 Expose CLI tools safely through generated web interfaces using strict, deterministic ToolSpec validation to prevent arbitrary command execution.
 
-## Current Milestone: v1.1 Rootless Podman Hardening & First Application
+## Current Milestone: v2.0 LLM Assistant & WebSocket Streaming
 
-**Goal:** Implement a fully rootless, hardened Podman sandbox profile and deploy the first fully working CLI application through ClearGate.
-
-**Target features:**
-- Implement rootless Podman execution for job isolation
-- Create hardened sandbox security profiles (seccomp, network isolation)
-- Define and approve a real, fully working ToolSpec application
-- Verify end-to-end execution of this first real application
+**Goal:** Implement CloudWeGo Eino integration to automatically draft ToolSpecs from raw CLI manuals and upgrade log streaming to WebSockets for broader browser compatibility.
 
 ## Requirements
 
@@ -24,24 +18,25 @@ Expose CLI tools safely through generated web interfaces using strict, determini
 
 <!-- Shipped and confirmed valuable. -->
 
-(None yet — ship to validate)
+- ✓ Expose CLI tools safely through generated web interfaces. — v1.0
+- ✓ Prevent arbitrary command execution by using structured ToolSpecs and strict validation. — v1.1
+- ✓ Support file upload and artifact download for tools that process files. — v1.0
+- ✓ Capture stdout, stderr, exit code, metadata, and output files for every run. — v1.0
+- ✓ Allow users and teams to save presets as reusable execution profiles. — v1.0
+- ✓ Provide strong auditability (who, what, when, inputs, versions, sandbox policy). — v1.0
+- ✓ Generate UI automatically from the ToolSpec. — v1.0
+- ✓ Implement secure execution backend with sandbox policies (Docker/Podman). — v1.0
+- ✓ Rootless Podman hardened sandbox profile. — v1.1
+- ✓ Provide a fully working first application (ToolSpec). — v1.1
+- ✓ Support local-first and enterprise deployments. — v1.0
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] Expose CLI tools safely through generated web interfaces.
-- [ ] Prevent arbitrary command execution by using structured ToolSpecs and strict validation.
-- [ ] Support file upload and artifact download for tools that process files.
-- [ ] Capture stdout, stderr, exit code, metadata, and output files for every run.
-- [ ] Allow users and teams to save presets as reusable execution profiles.
 - [ ] Use LLMs to accelerate ToolSpec template creation (via CloudWeGo Eino).
-- [ ] Support local-first and enterprise deployments.
-- [ ] Provide strong auditability (who, what, when, inputs, versions, sandbox policy).
-- [ ] Generate UI automatically from the ToolSpec.
-- [ ] Implement secure execution backend with sandbox policies (Docker/Podman).
-- [ ] Rootless Podman hardened sandbox profile.
-- [ ] Provide a fully working first application (ToolSpec).
+- [ ] WebSocket-based streaming (v1 uses SSE).
+- [ ] Maintainer can run discovery on a binary or container to extract help/man/docs.
 
 ### Out of Scope
 
@@ -54,9 +49,9 @@ Expose CLI tools safely through generated web interfaces using strict, determini
 
 ## Context
 
-- Enterprise environments have many useful CLI tools, but giving users shell access is risky and hard to audit.
-- ClearGate solves this by making the ToolSpec the source of truth for UI, validation, command construction, and security.
-- The LLM output is untrusted and must pass schema validation, policy checks, and human approval before becoming an active ToolSpec.
+Shipped v1.1 with ~3,500 LOC Go and React.
+Tech stack: Go, React, DuckDB, Podman bindings.
+Current application enforces strict schema validation and runs applications in rootless Podman sandboxes with streaming.
 
 ## Constraints
 
@@ -70,8 +65,9 @@ Expose CLI tools safely through generated web interfaces using strict, determini
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| ToolSpec as Source of Truth | Ensures deterministic behavior, security, and UI consistency | — Pending |
+| ToolSpec as Source of Truth | Ensures deterministic behavior, security, and UI consistency | ✓ Good |
 | Untrusted LLM Pipeline | LLMs hallucinate; restricting them to drafting templates ensures safety | — Pending |
+| Append-only ToolSpec Versioning | Preserves historical auditability without breaking old presets | ✓ Good |
 
 ## Evolution
 
@@ -91,4 +87,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-06 after initialization*
+*Last updated: 2026-05-15 after v1.1 milestone*
